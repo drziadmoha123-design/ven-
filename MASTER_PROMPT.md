@@ -1,45 +1,105 @@
-======================================================================
-VEN+ / VENPLUS
-MASTER SYSTEM SPECIFICATION
-FINAL IMPLEMENTATION CONTRACT
-PRODUCTION-GRADE COMMERCE + LOYALTY + REFERRAL + OPERATIONS PLATFORM
-======================================================================
+# VEN+ / VENPLUS
 
+# MASTER SYSTEM SPECIFICATION
+
+# FINAL IMPLEMENTATION CONTRACT
+
+# PRODUCTION-GRADE COMMERCE + LOYALTY + REFERRAL + OPERATIONS PLATFORM
+
+======================================================================
 DOCUMENT STATUS
----------------
+===============
+
 THIS DOCUMENT IS THE AUTHORITATIVE MASTER CONTRACT.
 
 It supersedes:
-- previous prompts
-- previous generated code
-- previous schema assumptions
-- previous UI assumptions
-- previous implementation shortcuts
-- agent assumptions
+
+* previous prompts
+* previous generated code
+* previous schema assumptions
+* previous UI assumptions
+* previous implementation shortcuts
+* previous agent assumptions
+* prototype behavior
+* visual mockups
+* inferred business rules
 
 When an implementation conflicts with this specification:
+
 THIS SPECIFICATION WINS.
 
-The system is not a prototype.
-The system is not a visual mockup.
-The system is not a CRUD demo.
+The system is NOT:
+
+* a prototype
+* a visual mockup
+* a CRUD demo
+* a fake transactional application
+* a frontend-only simulation
+* a simplified educational implementation
 
 It is a real transactional commerce and operational platform.
 
+The implementation must prioritize:
+
+CORRECTNESS
+
+>
+
+SECURITY
+
+>
+
+DATA INTEGRITY
+
+>
+
+BUSINESS RULE INTEGRITY
+
+>
+
+AUDITABILITY
+
+>
+
+MAINTAINABILITY
+
+>
+
+TESTABILITY
+
+>
+
+RELIABILITY
+
+>
+
+PERFORMANCE
+
+>
+
+UX
+
+>
+
+VISUAL POLISH
+
+Never reverse this priority.
+
 ======================================================================
 0. MISSION
-======================================================================
+==========
 
 Build VEN+ as a production-grade platform containing:
 
 CUSTOMER STOREFRONT
 CUSTOMER AUTHENTICATION
 CUSTOMER ACCOUNTS
+GOOGLE OAUTH
 PRODUCT CATALOG
 CATEGORIES
 PRODUCT VARIANTS
 MEDIA MANAGEMENT
-CART
+PERSISTENT CART
 CHECKOUT
 CASH-ON-DELIVERY ORDERS
 POINTS PRODUCT REDEMPTION
@@ -49,6 +109,7 @@ REFERRAL SYSTEM
 ORDER CONFIRMATION
 MANUAL PHONE CONFIRMATION
 MANUAL WHATSAPP CONFIRMATION
+ORDER AMENDMENTS
 FULFILLMENT
 DELIVERY PROCESSING
 INVENTORY
@@ -68,115 +129,157 @@ OBSERVABILITY
 CRON
 TESTING
 DEPLOYMENT
+BACKUP / RECOVERY DOCUMENTATION
 
 Optimize for:
 
 CORRECTNESS
+
 >
+
 SECURITY
+
 >
+
 DATA INTEGRITY
+
 >
+
 BUSINESS RULE INTEGRITY
+
 >
+
 AUDITABILITY
+
 >
+
 MAINTAINABILITY
+
 >
+
 TESTABILITY
+
 >
+
 RELIABILITY
+
 >
+
 PERFORMANCE
+
 >
+
 UX
+
 >
+
 VISUAL POLISH
 
-Never reverse this priority.
-
 ======================================================================
+
 1. NON-NEGOTIABLE SOURCE OF TRUTH
-======================================================================
+   ======================================================================
 
-PostgreSQL is the authoritative source of truth.
+PostgreSQL is the authoritative persistent source of truth.
 
 Never treat any of the following as authoritative:
 
-- React state
-- Zustand
-- localStorage
-- sessionStorage
-- URL parameters
-- browser memory
-- client totals
-- client prices
-- client stock
-- client points balance
-- client role
-- client permissions
-- Excel
-- WhatsApp messages
-- UI state
+* React state
+* Zustand
+* localStorage
+* sessionStorage
+* URL parameters
+* browser memory
+* client totals
+* client prices
+* client stock
+* client points balance
+* client role
+* client permissions
+* Excel
+* WhatsApp messages
+* UI state
+* cached frontend responses
 
 Excel is an import/export transport mechanism.
 
-WhatsApp is a communication/confirmation mechanism.
+WhatsApp is a communication / manual confirmation mechanism.
 
 The Admin Dashboard is an operational control interface.
 
-Critical business logic must execute server-side.
+Critical business logic MUST execute server-side.
 
 ======================================================================
 2. TECHNOLOGY BASELINE
-======================================================================
+======================
 
-Use a mutually compatible production stack:
+Use a mutually compatible production stack.
 
 Framework:
-- Next.js 15+
-- App Router
-- React
-- TypeScript
-- strict: true
+
+* Next.js 15+
+* App Router
+* React
+* TypeScript
+* strict: true
 
 UI:
-- Tailwind CSS
-- shadcn/ui
-- Lucide icons
-- limited justified animation
+
+* Tailwind CSS
+* shadcn/ui
+* Lucide icons
+* limited justified animation
 
 State:
-- Zustand only for client-side convenience/state mirroring
+
+* Zustand ONLY for client-side convenience/state mirroring
+* never as business authority
 
 Backend:
-- Server Actions
-- Route Handlers
-- dedicated Service Layer
+
+* Next.js Server Actions
+* Route Handlers
+* dedicated Service Layer
 
 Database:
-- PostgreSQL
-- Prisma ORM
+
+* PostgreSQL
+
+ORM:
+
+* Prisma ORM
 
 Validation:
-- Zod
+
+* Zod
 
 Authentication:
-- Auth.js / NextAuth-compatible architecture
-- Credentials authentication
-- Argon2id preferred
+
+* Auth.js / NextAuth-compatible architecture
+
+Authentication providers:
+
+* Credentials
+* Google OAuth 2.0
+
+Password hashing:
+
+* Argon2id preferred
 
 Excel:
-- ExcelJS or equivalent safe XLSX library
+
+* ExcelJS or equivalent safe XLSX library
 
 Testing:
-- Vitest
-- Playwright
+
+* Vitest
+* Playwright
 
 Deployment:
-- Vercel-compatible
-- Docker-compatible
-- Node.js-compatible
+
+* Vercel-compatible
+* Docker-compatible
+* Node.js-compatible
 
 Exact dependency versions must be verified during Phase 00.
 
@@ -184,56 +287,76 @@ Do not blindly upgrade packages.
 
 Do not install unnecessary packages.
 
+IMPORTANT:
+
+If the repository being audited currently uses another compatible architecture
+or technology baseline, the agent MUST NOT silently rewrite it.
+
+Phase 00 must determine:
+
+* current stack
+* target stack
+* migration need
+* migration cost
+* compatibility risks
+* data preservation risks
+
+Any migration must be explicit, traceable, reversible where possible,
+and approved by the phase gate.
+
 ======================================================================
 3. ARCHITECTURAL PIPELINE
-======================================================================
+=========================
 
 CLIENT
-  ↓
+↓
 Next.js App Router
-  ↓
+↓
 Server Component / Client Component
-  ↓
+↓
 Server Action / Route Handler
-  ↓
+↓
 Authentication
-  ↓
+↓
 Authorization
-  ↓
+↓
 Zod Validation
-  ↓
+↓
 Domain Command
-  ↓
+↓
 Service Layer
-  ↓
+↓
 Business Rules / Invariants
-  ↓
+↓
 Transaction
-  ↓
+↓
 Prisma
-  ↓
+↓
 PostgreSQL
 
 Business logic MUST NOT be duplicated between:
 
-- React components
-- hooks
-- Zustand
-- Server Actions
-- Route Handlers
-- Excel processors
-- UI helpers
+* React components
+* hooks
+* Zustand
+* Server Actions
+* Route Handlers
+* Excel processors
+* cron jobs
+* UI helpers
+* background workers
 
 Critical rules have exactly one authoritative domain implementation.
 
 ======================================================================
 4. DOMAIN SERVICES
-======================================================================
+==================
 
 Create centralized services as required:
 
 AuthService
 UserService
+OAuthService
 ReferralService
 CategoryService
 ProductService
@@ -261,9 +384,19 @@ Service boundaries may be refined during Phase 00.
 
 Business rules may not be duplicated.
 
+The existence of a service does not justify unnecessary abstraction.
+
+Use the smallest architecture that preserves:
+
+* correctness
+* testability
+* transaction integrity
+* domain isolation
+* maintainability
+
 ======================================================================
 5. BRAND IDENTITY
-======================================================================
+=================
 
 Brand:
 Ven+
@@ -318,56 +451,62 @@ Info:
 Orange is an ACTION COLOR.
 
 Use orange mainly for:
-- CTA
-- active navigation
-- active selection
-- focus
-- important action
-- points/rewards
+
+* CTA
+* active navigation
+* active selection
+* focus
+* important action
+* points/rewards
 
 Do not make the entire application orange.
 
 Visual identity:
-- premium
-- minimal
-- modern
-- white
-- operational
-- commerce-oriented
-- high information density
-- clean
+
+* premium
+* minimal
+* modern
+* white
+* operational
+* commerce-oriented
+* high information density
+* clean
 
 Avoid:
-- excessive gradients
-- excessive shadows
-- unnecessary glassmorphism
-- decorative noise
-- pointless animation
-- fake dashboard widgets
+
+* excessive gradients
+* excessive shadows
+* unnecessary glassmorphism
+* decorative noise
+* pointless animation
+* fake dashboard widgets
 
 ======================================================================
 6. TYPOGRAPHY
-======================================================================
+=============
 
 Arabic:
-- Cairo preferred
-- Readex Pro acceptable
+
+* Cairo preferred
+* Readex Pro acceptable
 
 English:
-- modern readable sans-serif
+
+* modern readable sans-serif
 
 Typography must be consistent across:
-- storefront
-- checkout
-- account
-- admin
-- tables
-- dialogs
-- forms
+
+* storefront
+* checkout
+* account
+* admin
+* tables
+* dialogs
+* forms
 
 ======================================================================
 7. INTERNATIONALIZATION
-======================================================================
+=======================
 
 Locales:
 
@@ -386,22 +525,24 @@ Preferred routing:
 /en/...
 
 Language switcher:
-- visible in header
-- preserves session
-- preserves cart
-- preserves business context where technically possible
+
+* visible in header
+* preserves session
+* preserves cart
+* preserves business context where technically possible
 
 Localized fields must use strict structure:
 
 {
-  ar: string,
-  en: string
+ar: string,
+en: string
 }
 
 Required localized entities:
-- Product title
-- Product description
-- Category name
+
+* Product title
+* Product description
+* Category name
 
 No arbitrary localization JSON.
 
@@ -415,17 +556,18 @@ All layouts must correctly support RTL/LTR.
 
 ======================================================================
 8. AUTHENTICATION MODEL — FINAL
-======================================================================
+===============================
 
 There is ONE unified login interface.
 
 No:
-- Admin login page
-- Customer login page
-- Role selector
-- public Admin registration
 
-Login:
+* Admin login page
+* Customer login page
+* Role selector
+* public Admin registration
+
+Credentials login:
 
 Email
 Password
@@ -435,11 +577,15 @@ Password
 Create Account
 Forgot Password?
 
-The server determines identity.
+Google:
+
+[ Continue with Google ]
+
+The server determines identity and role.
 
 ======================================================================
 9. ADMIN IDENTITY — FINAL RESOLUTION
-======================================================================
+====================================
 
 The Admin MUST exist as a real User row in PostgreSQL.
 
@@ -457,11 +603,13 @@ ADMIN_PASSWORD_HASH
 Bootstrap behavior:
 
 1. normalize ADMIN_EMAIL
-2. ensure corresponding User exists
+2. find or create corresponding User
 3. ensure role = ADMIN
 4. ensure secure password hash exists
-5. NEVER expose Admin credentials to client
-6. NEVER submit role from browser
+5. never expose Admin credentials to client
+6. never accept role from browser
+7. never overwrite the Admin password on every request
+8. use a controlled bootstrap/sync operation
 
 Auth.js authenticates against the actual database User record.
 
@@ -469,64 +617,229 @@ The environment configuration is a bootstrap authority,
 not a substitute for the User table.
 
 Do NOT create:
-- env-only Admin sessions
-- fake Admin objects
-- client-side Admin flags
 
-Do NOT overwrite the Admin password on every request.
-
-Use a controlled bootstrap/sync operation.
+* env-only Admin sessions
+* fake Admin objects
+* client-side Admin flags
+* browser-controlled Admin privilege
 
 ======================================================================
 10. CUSTOMER AUTHENTICATION
-======================================================================
+===========================
 
 Public registration always creates:
 
 role = CUSTOMER
 
 Client cannot submit:
-- role
-- isAdmin
-- permissions
-- admin
-- privilege
+
+* role
+* isAdmin
+* permissions
+* admin
+* privilege
+* pointsBalance
 
 Email:
-- normalized
-- case-insensitive unique
+
+* normalized
+* case-insensitive unique
 
 Phone:
-- normalized
-- validated
+
+* normalized
+* validated
 
 Password:
-- securely hashed
-- never logged
-- never returned
-- never stored plaintext
+
+* securely hashed
+* Argon2id preferred
+* never logged
+* never returned
+* never stored plaintext
 
 Authentication failure:
+
 "Invalid email or password."
 
 Never reveal whether the account exists.
 
 ======================================================================
-11. EMAIL VERIFICATION — FINAL
+11. GOOGLE OAUTH — FINAL
+========================
+
+Google OAuth 2.0 is a supported authentication provider.
+
+Google Sign-In is an authentication mechanism,
+not a role system.
+
+Authentication architecture:
+
+Credentials
++
+Google OAuth
+
+Both MUST resolve to the same internal User identity model
+and the same session / authorization architecture.
+
+Required environment variables:
+
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+GOOGLE_CALLBACK_URL
+
+Secrets:
+
+* server-side only
+* never hard-coded
+* never exposed to client
+* never logged
+
+Conceptual OAuth entity:
+
+OAuthAccount
+
+Fields:
+
+id
+userId
+provider
+providerAccountId
+createdAt
+updatedAt
+
+Constraint:
+
+UNIQUE(provider, providerAccountId)
+
+Google OAuth flow:
+
+User
+→ Google authorization
+→ callback
+→ validate provider response
+→ resolve internal identity
+→ create or link internal User
+→ establish application session
+
+Google authentication MUST NOT determine:
+
+* role
+* permissions
+* points
+* referral ownership
+* admin privilege
+* account status
+
+Role is ALWAYS taken from the internal User record.
+
 ======================================================================
+12. GOOGLE ACCOUNT CREATION — FINAL
+===================================
+
+When a valid Google identity authenticates for the first time:
+
+1. validate the provider response
+2. validate provider identity
+3. require a trusted / verified Google email according to policy
+4. create internal User if no valid account exists
+5. default new identity to CUSTOMER
+6. generate exactly one immutable Referral Code
+7. create OAuthAccount
+8. establish normal application session
+9. apply normal customer onboarding rules
+
+Google login MUST NOT create an Admin.
+
+Google login MUST NOT elevate a Customer to Admin.
+
+======================================================================
+13. GOOGLE ACCOUNT LINKING — FINAL
+==================================
+
+Do NOT blindly merge accounts because email strings match.
+
+Automatic linking is allowed ONLY when:
+
+* provider email is verified/trusted
+* existing account-linking policy explicitly permits it
+* the operation is safe
+* the operation is auditable
+
+Otherwise require:
+
+authenticated explicit account-linking flow
+
+Rules:
+
+* a provider identity can belong to only one internal User
+* duplicate provider identities are rejected
+* linking cannot transfer Admin privileges
+* linking cannot transfer points
+* linking cannot transfer referral ownership
+* linking cannot silently merge two customer records
+
+Any failed linking operation must not leave partial identity records.
+
+======================================================================
+14. GOOGLE OAUTH SECURITY
+=========================
+
+Protect against:
+
+* CSRF
+* OAuth state attacks
+* callback manipulation
+* provider identity confusion
+* account takeover
+* unsafe account linking
+* replay
+* session fixation
+
+Callback URLs must be environment-specific.
+
+Do not trust browser role information.
+
+Do not store Google access/refresh tokens unless actually required.
+
+If tokens are stored:
+
+* encrypt at rest
+* never expose to client
+* never log
+* apply retention/rotation policy
+
+Required tests:
+
+* first Google login
+* returning Google login
+* invalid OAuth callback
+* duplicate provider identity
+* explicit account linking
+* unauthorized account linking
+* unverified provider email policy
+* Google customer cannot become Admin
+* Admin authorization policy
+* session creation
+* provider failure
+* replay protection
+
+======================================================================
+15. EMAIL VERIFICATION — FINAL
+==============================
 
 Email verification is REQUIRED for full account activation.
 
 Policy:
 
-- Registration creates the customer.
-- Customer may log in before verification.
-- Unverified customers enter a restricted account state.
-- Unverified customers may browse and manage basic account context.
-- Unverified customers CANNOT create orders.
-- Unverified customers CANNOT redeem points.
-- Unverified customers CANNOT claim referral rewards directly.
-- Admin account is exempt from email verification requirement.
+* Registration creates customer.
+* Customer may log in before verification.
+* Unverified customers enter restricted account state.
+* Unverified customers may browse and manage basic account context.
+* Unverified customers CANNOT create orders.
+* Unverified customers CANNOT redeem points.
+* Unverified customers CANNOT claim referral rewards directly.
+* Admin account is exempt.
 
 Flow:
 
@@ -540,66 +853,77 @@ registration
 → enable commerce actions
 
 Verification token:
-- single-use
-- expires after 15 minutes
-- replay protected
-- never logged raw
+
+* cryptographically secure
+* hashed before storage
+* single-use
+* expires after 15 minutes
+* replay protected
+* never logged raw
 
 Resend verification:
-- rate limited
+
+* rate limited
 
 ======================================================================
-12. PASSWORD RESET — FINAL
-======================================================================
+16. PASSWORD RESET — FINAL
+==========================
 
 Reset token:
-- cryptographically secure
-- hashed before storage
-- single-use
-- expires after 15 minutes
-- replay protected
-- never logged
+
+* cryptographically secure
+* hashed before storage
+* single-use
+* expires after 15 minutes
+* replay protected
+* never logged
 
 Reset request uses generic response.
 
-Rate-limited.
+Never disclose whether account exists.
+
+Rate limit reset operations.
 
 ======================================================================
-13. SESSION POLICY
-======================================================================
+17. SESSION POLICY
+==================
 
 Use secure HttpOnly cookies.
 
 Production:
-- Secure
-- HttpOnly
-- SameSite appropriate to architecture
 
-Default customer session maximum age:
+* Secure
+* HttpOnly
+* SameSite appropriate to architecture
+
+Default maximum age:
+
+Customer:
 30 days
 
-Admin session maximum age:
+Admin:
 12 hours
 
 Session activity may be refreshed safely.
 
-Critical Admin operations may require reauthentication in future.
-
 Never place authoritative role information in localStorage.
 
+Critical Admin operations may require reauthentication in future.
+
 ======================================================================
-14. REFERRAL SYSTEM — FINAL
-======================================================================
+18. REFERRAL SYSTEM — FINAL
+===========================
 
 Every user receives exactly one immutable Referral Code.
 
 Referral Code:
-- server generated
-- unique
-- stable
-- not editable
-- collision resistant
-- does not expose User ID
+
+* server generated
+* unique
+* stable
+* not editable
+* collision resistant
+* does not expose User ID
 
 Registration field:
 
@@ -616,29 +940,30 @@ If customer registers with valid code:
 relationship becomes immutable.
 
 Self-referral:
+
 REJECT.
 
 A customer may invite any person they legitimately choose.
 
 ======================================================================
-15. REFERRAL LINK
-======================================================================
+19. REFERRAL LINK
+=================
 
 Optional referral URL:
 
 /register?ref=VEN-XXXXXX
 
-The URL parameter is not authoritative.
+URL parameter is not authoritative.
 
 Server validates code.
 
-Do not store referral attribution merely because browser visited a URL.
+Visiting URL does NOT create attribution.
 
 Only successful registration creates Referral relation.
 
 ======================================================================
-16. REFERRAL DATA MODEL
-======================================================================
+20. REFERRAL DATA MODEL
+=======================
 
 Referral:
 
@@ -651,37 +976,41 @@ rewardTransactionId nullable
 
 Constraints:
 
-- refereeId unique
-- one referee → one referrer
-- relationship immutable
+* refereeId unique
+* one referee → one referrer
+* relationship immutable
 
 ======================================================================
-17. REFERRAL REWARD — FINAL
-======================================================================
+21. REFERRAL REWARD — FINAL
+===========================
 
 Reward:
+
 50 Points
 
 Receiver:
+
 REFERRER
 
 Trigger:
+
 REFEREE'S FIRST DELIVERED ORDER
 
 Exactly once.
 
 Never award at:
-- registration
-- account creation
-- cart
-- checkout
-- confirmation
-- processing
-- shipped
+
+* registration
+* account creation
+* cart
+* checkout
+* confirmation
+* processing
+* shipped
 
 ======================================================================
-18. REFERRAL CORRECTION RULE — FINAL
-======================================================================
+22. REFERRAL CORRECTION RULE — FINAL
+====================================
 
 If referee's first qualifying order changes:
 
@@ -689,48 +1018,48 @@ DELIVERED
 →
 CUSTOMER_REFUSED
 
-and the 50-point referral reward was already granted:
+and 50-point referral reward already exists:
 
-IMMEDIATELY reverse the reward using a ledger entry:
+create:
 
 REFERRAL_REWARD
 →
 POINTS_REVERSAL
 
-Do NOT delete the historical reward transaction.
+Do NOT delete historical transactions.
 
 Record:
-- original reward
-- reversal
-- correction reason
-- actor
-- timestamp
-- related order
 
-If the order later changes:
+* original reward
+* reversal
+* correction reason
+* actor
+* timestamp
+* related order
+
+If later:
 
 CUSTOMER_REFUSED
 →
 DELIVERED
 
-and the referral reward is no longer currently active:
+and reward is currently inactive:
 
 re-award exactly 50 points through a new ledger transaction.
 
 Never allow more than one active referral reward for the same referee's first qualifying delivered order.
 
 ======================================================================
-19. PRODUCT ARCHITECTURE
-======================================================================
+23. PRODUCT ARCHITECTURE
+========================
 
-Product has no authoritative stock.
+Product has NO authoritative stock.
 
 Stock exists only on ProductVariant.
 
-Every active Product MUST have:
-at least one active ProductVariant.
+Every active Product MUST have at least one active ProductVariant.
 
-Product concept:
+Product:
 
 id
 title
@@ -746,8 +1075,8 @@ createdAt
 updatedAt
 
 ======================================================================
-20. VARIANT ARCHITECTURE
-======================================================================
+24. VARIANT ARCHITECTURE
+========================
 
 ProductVariant:
 
@@ -764,110 +1093,110 @@ createdAt
 updatedAt
 
 Variant pricing:
+
 variant price overrides product base price.
 
 Variant points price:
+
 variant points price overrides product default points price.
 
 Variant delivery reward:
+
 variant reward overrides product default delivery reward.
 
 Stock:
+
 integer >= 0
 
 SKU:
+
 unique when present
 
 Attributes:
+
 strictly validated JSON.
 
 Duplicate variant combinations are forbidden.
 
 ======================================================================
-21. DELIVERY POINTS REWARD — FINAL
-======================================================================
+25. DELIVERY POINTS REWARD — FINAL
+==================================
 
-Delivery reward is configured per product.
-
-Product field:
+Delivery reward configured per Product:
 
 defaultDeliveryPointsReward
 
-Variant may override:
+Variant override:
 
 deliveryPointsReward
 
-Value:
-integer >= 0
+Reward:
 
-Semantics:
-reward is earned PER DELIVERED UNIT.
+PER DELIVERED UNIT
 
 Example:
 
 Product reward = 10 points
-Quantity delivered = 3
+Delivered quantity = 3
 
-Reward:
-30 points
+Reward = 30 points
 
 OrderItem MUST snapshot:
 
 pointsRewardSnapshot
 
-The snapshot represents the exact reward-per-unit at order creation.
+Total reward:
 
-Total delivery reward:
-
-sum(
-  pointsRewardSnapshot
-  × deliveredQuantity
+SUM(
+pointsRewardSnapshot
+×
+deliveredQuantity
 )
 
-across eligible order items.
+across eligible items.
 
 ======================================================================
-22. POINTS-REDEMPTION DELIVERY REWARD — FINAL
-======================================================================
+26. POINTS-REDEMPTION DELIVERY REWARD — FINAL
+=============================================
 
 Setting:
 
 AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION
 
 Type:
+
 boolean
 
-Current default:
+Default:
+
 FALSE
 
-Meaning:
-
 If FALSE:
+
 points-purchased product lines earn 0 delivery points.
 
 If TRUE:
-points-purchased product lines earn their normal configured
-deliveryPointsReward.
 
-Cash-purchased product lines always use their configured reward.
+points-purchased product lines use their configured delivery reward.
 
-This rule is explicit and deterministic.
+Cash-purchased lines always use configured reward.
 
-No percentage-of-price calculation exists.
+No percentage-of-price formula exists.
 
-No dynamic formula exists.
+No dynamic reward formula exists.
 
 ======================================================================
-23. POINTS ARE NOT MONEY
-======================================================================
+27. POINTS ARE NOT MONEY
+========================
 
 Points:
-- are not EGP
-- cannot be converted to EGP
-- cannot be withdrawn
-- cannot become cash
-- cannot function as generic cash discount
-- cannot directly reduce an EGP subtotal
+
+* are not EGP
+* cannot convert to EGP
+* cannot be withdrawn
+* cannot become cash
+* cannot act as generic cash discount
+* cannot partially reduce EGP subtotal
 
 Points can ONLY be used for:
 
@@ -875,17 +1204,17 @@ Points can ONLY be used for:
 2. Full Free Shipping Redemption
 
 ======================================================================
-24. PRODUCT POINTS REDEMPTION — FINAL
-======================================================================
+28. PRODUCT POINTS REDEMPTION — FINAL
+=====================================
 
 Product redemption is ALL-OR-NOTHING.
 
-For a points-enabled product:
+Example:
 
-Cash Price:
+Cash:
 1500 EGP
 
-Points Price:
+Points:
 500 Points
 
 Options:
@@ -896,56 +1225,54 @@ CASH PURCHASE
 POINTS PURCHASE
 → 500 Points
 
-There is NO:
+Forbidden:
 
 250 Points + 750 EGP
-or
+
 100 Points + 1200 EGP
 
-Partial product redemption is forbidden.
+Partial product redemption is prohibited.
 
 ======================================================================
-25. MIXED CART — FINAL
-======================================================================
+29. MIXED CART — FINAL
+======================
 
 A cart MAY contain:
 
-- cash-purchased lines
-- points-purchased lines
+* cash-purchased lines
+* points-purchased lines
 
 within the same order.
 
-Each OrderItem has:
+Each OrderItem:
 
 purchaseMode:
 CASH
 or
 POINTS
 
-A points-purchased line:
-- pays full points price
-- pays zero cash product price
+Points line:
 
-A cash line:
-- pays normal cash price
+* full points price
+* zero cash product price
 
-Shipping remains a separate settlement component.
+Cash line:
+
+* normal cash price
+
+Shipping is separately settled.
 
 ======================================================================
-26. ORDER FUNDING — FINAL
-======================================================================
+30. ORDER FUNDING — FINAL
+=========================
 
-Do NOT call CASH / POINTS / MIXED "payment gateway methods".
-
-The actual payment method in Phase 1 is:
-
-CASH_ON_DELIVERY
-
-The order's funding composition is separate:
+Funding modes:
 
 CASH_ONLY
 POINTS_ONLY
 MIXED
+
+These are NOT payment gateway methods.
 
 Examples:
 
@@ -961,46 +1288,57 @@ MIXED
 Points product + free shipping:
 POINTS_ONLY
 
-Mixed cart with cash and points items:
+Mixed product cart:
 MIXED
 
-This resolves the previous semantic ambiguity.
+IMPORTANT:
+
+MIXED IS VALID AT ORDER-LEVEL FUNDING COMPOSITION.
+
+Do NOT remove MIXED from the domain model.
+
+Do NOT confuse MIXED funding composition with a mixed payment gateway.
 
 ======================================================================
-27. PAYMENT METHOD — FINAL
-======================================================================
+31. PAYMENT METHOD — FINAL
+==========================
 
 Current production payment method:
 
 CASH_ON_DELIVERY
 
 Meaning:
+
 customer pays cash to courier at delivery.
 
 No current:
-- card gateway
-- bank transfer
-- wallet
-- installment provider
-- online payment provider
+
+* credit card
+* debit card
+* bank transfer
+* wallet
+* installment provider
+* online payment gateway
 
 Do NOT implement them.
 
-Future payment support must use PaymentProvider abstraction.
+Future support must use:
+
+PaymentProvider abstraction
 
 ======================================================================
-28. PAYMENT DATA MODEL
-======================================================================
+32. PAYMENT DATA MODEL
+======================
 
 Order:
 
 paymentMethod = CASH_ON_DELIVERY
 
-Optional Payment entity may exist for future extension.
+Optional Payment entity may exist for future architecture.
 
-Do NOT create fake Payment rows claiming electronic settlement.
+Do NOT create fake electronic settlement records.
 
-Cash collection status is derived from order fulfillment in Phase 1:
+Phase 1 cash collection semantics:
 
 DELIVERED
 → COD expected/fulfilled
@@ -1008,11 +1346,9 @@ DELIVERED
 CUSTOMER_REFUSED
 → COD not collected
 
-No financial gateway settlement exists in Phase 1.
-
 ======================================================================
-29. SHIPPING
-======================================================================
+33. SHIPPING
+============
 
 One global shipping price.
 
@@ -1020,38 +1356,43 @@ Setting:
 
 GLOBAL_SHIPPING_PRICE
 
-Example:
+Default:
+
 70 EGP
 
-All governorates use same price.
+All governorates use same shipping price in Phase 1.
 
 No governorate-specific shipping.
 
 ======================================================================
-30. FREE SHIPPING
-======================================================================
+34. FREE SHIPPING
+=================
 
 Setting:
 
 FREE_SHIPPING_POINTS_THRESHOLD
 
-Example:
+Default:
+
 200 Points
 
 If customer has >= threshold:
+
 customer may redeem full free shipping.
 
 Shipping:
+
 0 EGP
 
 Otherwise:
+
 full shipping amount
 
 No partial shipping discount.
 
 ======================================================================
-31. SHIPPING SNAPSHOT
-======================================================================
+35. SHIPPING SNAPSHOT
+=====================
 
 At order creation:
 
@@ -1060,32 +1401,39 @@ shippingAmountSnapshot
 must be stored.
 
 If:
+
 70 → 80
 
-existing order remains:
+Existing order remains:
+
 70
 
-new order:
+New order:
+
 80
 
+Historical values are immutable.
+
 ======================================================================
-32. DELIVERY ESTIMATE
-======================================================================
+36. DELIVERY ESTIMATE
+=====================
 
 Setting:
 
 EXPECTED_DELIVERY_DURATION
 
 Examples:
+
 2–3 Days
 3–5 Days
 5–7 Days
 
 Current global value shown on:
-- homepage
-- product detail
-- checkout
-- delivery information
+
+* homepage
+* product detail
+* checkout
+* delivery information
 
 At order creation:
 
@@ -1093,11 +1441,9 @@ estimatedDeliveryTimeSnapshot
 
 is stored.
 
-Later setting changes do not modify historical orders.
-
 ======================================================================
-33. CHECKOUT CONTACT DATA
-======================================================================
+37. CHECKOUT CONTACT DATA
+=========================
 
 Required:
 
@@ -1106,20 +1452,21 @@ primaryPhone
 secondaryPhone
 whatsappNumber
 
-Optional toggle:
+Optional:
 
 whatsappSameAsPrimary
 
 If checked:
+
 WhatsApp = primary phone
 
-Server stores the resolved value.
+Server stores resolved value.
 
 ======================================================================
-34. CHECKOUT ADDRESS
-======================================================================
+38. CHECKOUT ADDRESS
+====================
 
-Required structured address:
+Required:
 
 governorate
 cityOrCenter
@@ -1131,11 +1478,11 @@ apartmentNumber
 landmark
 addressNotes
 
-Do NOT use one free-text address as the only address source.
+Do NOT use one free-text address as the only source.
 
 ======================================================================
-35. CHECKOUT SERVER FLOW
-======================================================================
+39. CHECKOUT SERVER FLOW — FINAL
+================================
 
 1. Authenticate
 2. Verify email
@@ -1147,7 +1494,7 @@ Do NOT use one free-text address as the only address source.
 8. Validate quantities
 9. Retrieve authoritative cash prices
 10. Retrieve authoritative points prices
-11. Resolve item purchase modes
+11. Resolve purchase modes
 12. Calculate cash subtotal
 13. Calculate points subtotal
 14. Load shipping settings
@@ -1158,23 +1505,26 @@ Do NOT use one free-text address as the only address source.
 19. Snapshot commercial values
 20. Snapshot shipping
 21. Snapshot delivery estimate
-22. Generate idempotency result
+22. Generate/validate idempotency identity
 23. Deduct stock atomically
 24. Deduct points atomically
 25. Create Order
 26. Create OrderItems
 27. Create PointsTransaction records
 28. Create InventoryTransaction records
-29. Create audit event where needed
+29. Create audit event where required
 30. Persist idempotency result
 31. Commit
 
 Any failure:
+
 ROLLBACK ALL MUTATIONS.
 
+No partial checkout is allowed.
+
 ======================================================================
-36. CHECKOUT IDEMPOTENCY — FINAL
-======================================================================
+40. CHECKOUT IDEMPOTENCY — FINAL
+================================
 
 Every checkout request requires an idempotency key.
 
@@ -1196,18 +1546,34 @@ resultOrderId
 createdAt
 expiresAt
 
-Default retention:
+Retention:
+
 7 days
 
 Same key + same fingerprint:
-return same business result.
+
+return original result.
 
 Same key + different fingerprint:
-reject with IDEMPOTENCY_CONFLICT.
+
+IDEMPOTENCY_CONFLICT
+
+Concurrent same-key requests:
+
+must not create duplicate business effects.
+
+Use:
+
+* unique database constraint
+* transaction
+* appropriate locking/isolation
+* deterministic result persistence
+
+A naïve check-then-create implementation is insufficient.
 
 ======================================================================
-37. ORDER MODEL
-======================================================================
+41. ORDER MODEL
+===============
 
 Order:
 
@@ -1255,8 +1621,8 @@ updatedAt
 All snapshots are historical.
 
 ======================================================================
-38. ORDER ITEM MODEL
-======================================================================
+42. ORDER ITEM MODEL
+====================
 
 OrderItem:
 
@@ -1283,33 +1649,33 @@ pointsLineTotal
 createdAt
 updatedAt
 
-No historical order is rebuilt from current Product state.
+Historical orders MUST NOT depend on mutable current catalog values.
 
 ======================================================================
-39. PAYMENT / TOTAL SEMANTICS
-======================================================================
+43. PAYMENT / TOTAL SEMANTICS
+=============================
 
 cashSubtotal:
-sum of cash-mode product lines
+sum of CASH product lines
 
 pointsSubtotal:
-sum of points-mode product lines
+sum of POINTS product lines
 
 shippingAmount:
 cash shipping charged
 
 totalCashDue:
+
 cashSubtotal + shippingAmount
 
-pointsTotalRedeemed:
-product points + shipping points
+totalPointsRedeemed:
 
-This removes ambiguity.
+product points + shipping points
 
 Example:
 
 Cash product 1500
-Paid shipping 70
+Shipping 70
 
 cashSubtotal = 1500
 pointsSubtotal = 0
@@ -1319,7 +1685,7 @@ totalCashDue = 1570
 Example:
 
 Points product 500
-Paid shipping 70
+Shipping 70
 
 cashSubtotal = 0
 pointsSubtotal = 500
@@ -1337,8 +1703,8 @@ shipping = 0
 totalPointsRedeemed = 700
 
 ======================================================================
-40. ORDER STATUS
-======================================================================
+44. ORDER STATUS
+================
 
 PENDING_CONFIRMATION
 CONFIRMED
@@ -1372,36 +1738,39 @@ DELIVERED
 ↔ CUSTOMER_REFUSED
 
 Corrections require:
-- Admin authorization
-- reason
-- audit
-- points effects
-- inventory effects
-- idempotency
+
+* Admin authorization
+* reason
+* audit
+* points effects
+* inventory effects
+* idempotency
 
 ======================================================================
-41. ORDER CANCELLATION
-======================================================================
+45. ORDER CANCELLATION
+======================
 
 Cancellation before shipment:
 
-- restore exact inventory
-- refund product points
-- refund shipping points
-- create ledger entries
-- update order
-- audit
+* restore exact inventory
+* refund product points
+* refund shipping points
+* create ledger entries
+* update order
+* audit
+* protect against duplicate execution
 
 Cancellation after shipment:
+
 NOT permitted through normal cancellation flow.
 
-A separate return/refusal workflow must be used.
+Use return/refusal workflow.
 
 ======================================================================
-42. CONFIRMATION — FINAL EDITABLE FIELDS
-======================================================================
+46. CONFIRMATION — FINAL EDITABLE FIELDS
+========================================
 
-NORMAL CONFIRMATION EDIT MODE may edit ONLY:
+Normal Confirmation may edit ONLY:
 
 fullName
 primaryPhone
@@ -1417,64 +1786,69 @@ apartmentNumber
 landmark
 addressNotes
 
-Every change:
-creates OrderDataChange.
+Every change creates:
 
-The following are READ-ONLY during normal Confirmation:
+OrderDataChange
 
-- product selection
-- product IDs
-- variant IDs
-- SKU
-- unit price
-- points price
-- product purchase mode
-- order totals
-- shipping amount
-- points already reserved
-- status
+Read-only:
+
+* product selection
+* product IDs
+* variant IDs
+* SKU
+* unit price
+* points price
+* purchase mode
+* order totals
+* shipping amount
+* points already reserved
+* status
 
 ======================================================================
-43. ORDER AMENDMENT FLOW — FINAL
-======================================================================
+47. ORDER AMENDMENT FLOW — FINAL
+================================
 
-If the customer requests:
+Customer requests:
 
-- change product
-- change variant
-- change quantity
-- remove item
-- add item
+* product change
+* variant change
+* quantity change
+* item removal
+* item addition
 
-DO NOT mutate OrderItem directly from Confirmation screen.
+MUST enter Order Amendment Flow.
 
-Use:
+Steps:
 
-Order Amendment Flow
-
-Process:
-
-1. verify order status is amendable
+1. verify order is amendable
 2. authenticate Admin
 3. capture requested change
-4. calculate new authoritative order state
+4. calculate authoritative new state
 5. determine stock delta
 6. determine points delta
 7. determine cash delta
-8. reverse old pending effects where required
+8. reverse old pending effects where necessary
 9. apply new effects transactionally
 10. update order items/snapshots
 11. create amendment audit
 12. create OrderDataChange
-13. create points/inventory ledger entries where applicable
-14. produce new order totals
-15. preserve full history
+13. create ledger entries
+14. preserve complete history
+15. calculate new authoritative totals
 
-Order amendment permitted only before SHIPPED.
+Amendment permitted ONLY before SHIPPED.
+
+Statuses:
+
+PENDING
+APPROVED
+APPLIED
+REJECTED
+FAILED
 
 ======================================================================
-44. CONFIRMATION ATTEMPTS
-======================================================================
+48. CONFIRMATION ATTEMPTS
+=========================
 
 Fields:
 
@@ -1501,8 +1875,8 @@ CUSTOMER_REFUSED
 OTHER
 
 ======================================================================
-45. THREE FAILED CALLS
-======================================================================
+49. THREE FAILED CALLS
+======================
 
 After 3 failed phone attempts:
 
@@ -1516,46 +1890,46 @@ Display:
 
 HIGH_ATTEMPT_COUNT
 
-This is a mandatory business rule.
+Mandatory.
 
 ======================================================================
-46. WHATSAPP
-======================================================================
+50. WHATSAPP
+============
 
 Phase 1:
-manual only
 
-Customer provides WhatsApp.
+MANUAL ONLY
 
 Admin can:
-- copy number
-- open WhatsApp
-- prepare prefilled text
-- record manual result
 
-No automated WhatsApp API in Phase 1.
+* copy number
+* open WhatsApp
+* prepare prefilled text
+* record manual result
+
+No automated WhatsApp API.
 
 Architecture:
 
 IWhatsAppConfirmationProvider
 
 Current:
+
 ManualWhatsAppConfirmationProvider
 
 Future:
+
 AutomatedWhatsAppConfirmationProvider
 
 ======================================================================
-47. INVENTORY
-======================================================================
+51. INVENTORY
+=============
 
 Authoritative source:
 
 ProductVariant.stock
 
-At checkout:
-
-atomic deduction.
+Checkout deduction must be atomic.
 
 Concept:
 
@@ -1565,13 +1939,14 @@ WHERE id = variantId
 AND stock >= quantity
 
 If no rows affected:
+
 INSUFFICIENT_STOCK
 
 Rollback.
 
 ======================================================================
-48. INVENTORY LEDGER
-======================================================================
+52. INVENTORY LEDGER
+====================
 
 InventoryTransaction:
 
@@ -1595,15 +1970,15 @@ RETURN_RESTORATION
 ADMIN_ADJUSTMENT
 AMENDMENT_ADJUSTMENT
 
-Ledger is append-only.
+Append-only.
 
 ======================================================================
-49. CUSTOMER REFUSED INVENTORY
-======================================================================
+53. CUSTOMER REFUSED INVENTORY
+==============================
 
-Customer refused does NOT restore inventory automatically.
+Customer refused does NOT restore inventory immediately.
 
-Workflow:
+Flow:
 
 CUSTOMER_REFUSED
 → RETURN_IN_TRANSIT
@@ -1615,36 +1990,34 @@ Phase 1 authorization:
 
 ADMIN ONLY
 
-Future:
-permission-based role may be introduced.
+Verification requires:
 
-Warehouse Return Verified requires:
-- Admin authorization
-- reason if manual
-- audit
-- idempotency
+* Admin authorization
+* reason
+* audit
+* idempotency
 
 ======================================================================
-50. RETURN VERIFICATION
-======================================================================
+54. RETURN VERIFICATION
+=======================
 
-Only ADMIN can currently mark:
+Only ADMIN may mark:
 
 WAREHOUSE_RETURN_VERIFIED
 
-Action:
+Actions:
 
-- verify physical return
-- create InventoryTransaction
-- restore exact quantity
-- prevent duplicate restoration
-- audit
+* verify physical return
+* restore exact quantity
+* create InventoryTransaction
+* prevent duplicate restoration
+* audit
 
-No automatic restoration before this state.
+No automatic restoration before verification.
 
 ======================================================================
-51. DELIVERY EXCEL
-======================================================================
+55. DELIVERY EXCEL
+==================
 
 Required:
 
@@ -1661,85 +2034,92 @@ Allowed:
 DELIVERED
 CUSTOMER_REFUSED
 
-Each row:
+Each row must be:
 
-validated
-processed
-audited
-idempotent
+* validated
+* processed
+* audited
+* idempotent
 
 ======================================================================
-52. DELIVERY PROCESSING
-======================================================================
+56. DELIVERY PROCESSING
+=======================
 
 DELIVERED:
 
-- validate legal state transition
-- update order
-- award eligible item delivery points
-- evaluate referral reward
-- audit
-- idempotency
+* validate state transition
+* update order
+* award eligible item delivery points
+* evaluate referral reward
+* audit
+* idempotency
 
 CUSTOMER_REFUSED:
 
-- update order
-- award ZERO delivery points
-- do not issue referral reward
-- create return workflow
-- audit
+* update order
+* award zero delivery points
+* do not issue referral reward
+* create return workflow
+* audit
 
-No inventory restoration at this point.
+No inventory restoration at refusal.
 
 ======================================================================
-53. DELIVERY POINTS — COMPUTATION
-======================================================================
+57. DELIVERY POINTS — COMPUTATION
+=================================
 
-For every delivered eligible OrderItem:
+For each eligible delivered OrderItem:
 
 reward =
-pointsRewardSnapshot × deliveredQuantity
+pointsRewardSnapshot
+×
+deliveredQuantity
 
-Total order delivery reward:
+Order reward:
 
-SUM(all eligible order item rewards)
+SUM(all eligible line rewards)
 
-Points are awarded once.
+Award exactly once.
 
-If points purchased product and:
+For POINTS purchases:
+
+if:
 
 AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION = FALSE
 
-that item reward = 0.
+reward = 0
 
 If TRUE:
-use normal configured reward.
+
+normal configured reward applies.
 
 ======================================================================
-54. DELIVERY CORRECTION
-======================================================================
+58. DELIVERY CORRECTION
+=======================
 
 DELIVERED → CUSTOMER_REFUSED:
 
-If delivery points were previously awarded:
-create reversal ledger.
+If delivery points were awarded:
 
-If referral reward for first delivery was awarded:
-create referral reward reversal.
+create reversal ledger entry.
 
-No ledger history is deleted.
+If referral reward was awarded:
+
+create reversal entry.
+
+Never delete history.
 
 CUSTOMER_REFUSED → DELIVERED:
 
-re-award eligible delivery points only if no current active reward exists.
+re-award eligible delivery points only if currently inactive.
 
-Re-award referral 50 points only if the first-delivery condition is once again satisfied and previous reward is currently reversed.
+Re-award referral reward only when qualification is valid again and previous reward is reversed.
 
-All transitions are idempotent.
+All transitions must be idempotent.
 
 ======================================================================
-55. POINTS LEDGER
-======================================================================
+59. POINTS LEDGER
+=================
 
 PointsTransaction:
 
@@ -1764,11 +2144,11 @@ POINTS_REVERSAL
 REFERRAL_REWARD
 ADMIN_ADJUSTMENT
 
-No deletion of ledger history.
+Ledger is append-only.
 
 ======================================================================
-56. POINTS BALANCE
-======================================================================
+60. POINTS BALANCE
+==================
 
 pointsBalance may be cached.
 
@@ -1778,43 +2158,38 @@ Invariant:
 
 pointsBalance >= 0
 
-All changes:
-atomic
+Every balance change:
 
-No direct arbitrary mutation from Admin UI.
+* atomic
+* ledger-backed
+* auditable where required
 
-Admin adjustment:
-
-ledger + balance update + audit
-
-one transaction.
+Never arbitrary-update pointsBalance.
 
 ======================================================================
-57. ADMIN POINTS ADJUSTMENT
-======================================================================
+61. ADMIN POINTS ADJUSTMENT
+===========================
 
-Admin must provide:
+Admin inputs:
 
 customer
 amount
 direction
 reason
 
-Positive or negative adjustment must pass:
-- validation
-- authorization
-- transaction
-- ledger
-- audit
+Required:
 
-Never:
-UPDATE users SET pointsBalance = X
+validation
+authorization
+transaction
+ledger
+audit
 
-without ledger.
+No direct arbitrary balance overwrite.
 
 ======================================================================
-58. CUSTOMER POINTS HISTORY
-======================================================================
+62. CUSTOMER POINTS HISTORY
+===========================
 
 Display:
 
@@ -1824,33 +2199,34 @@ Display:
 -200 Free Shipping Redemption
 +200 Free Shipping Refund
 +delivery reward
--admin adjustment where visible
+-Admin Adjustment or equivalent explicit presentation
 
 Use explicit "Points".
 
 Never display points with EGP symbol.
 
 ======================================================================
-59. PRODUCT POINTS CATALOG
-======================================================================
+63. PRODUCT POINTS CATALOG
+==========================
 
 Only show products that are:
 
-- active
-- pointsEnabled
-- active variant
-- stock > 0
-- valid points price
+* active
+* pointsEnabled
+* active variant
+* stock > 0
+* valid points price
 
 Filter:
-- category
-- points range
-- availability
-- variant availability
+
+* category
+* points range
+* availability
+* variant availability
 
 ======================================================================
-60. ADMIN PRODUCT MANAGEMENT
-======================================================================
+64. ADMIN PRODUCT MANAGEMENT
+============================
 
 Product table:
 
@@ -1874,8 +2250,8 @@ Manage Images
 Manage Variants
 
 ======================================================================
-61. PRODUCT ADMIN FORM
-======================================================================
+65. PRODUCT ADMIN FORM
+======================
 
 STEP 1:
 Localized title
@@ -1910,11 +2286,11 @@ Preview
 STEP 11:
 Save
 
-No raw JSON fields for normal administrators.
+No raw JSON fields for normal Admin users.
 
 ======================================================================
-62. VARIANT BUILDER
-======================================================================
+66. VARIANT BUILDER
+===================
 
 Visual controls:
 
@@ -1936,37 +2312,39 @@ Status
 Server validates serialized representation.
 
 ======================================================================
-63. IMAGE MANAGEMENT
-======================================================================
+67. IMAGE MANAGEMENT
+====================
 
 Admin-only.
 
 Support:
 
-- upload
-- preview
-- multiple images
-- primary image
-- reorder
-- replace
-- delete
-- alt text
+* upload
+* preview
+* multiple images
+* primary image
+* reorder
+* replace
+* delete
+* alt text
 
 Provider:
 
 IImageStorageProvider
 
-Server validates:
-- actual file content
-- type
-- extension
-- size
-- authorization
-- storage key
+Validate:
+
+* actual file content
+* MIME/type
+* extension
+* size
+* dimensions
+* authorization
+* storage key
 
 ======================================================================
-64. IMAGE LIFECYCLE
-======================================================================
+68. IMAGE LIFECYCLE
+===================
 
 Replacement:
 
@@ -1974,19 +2352,21 @@ upload new
 → validate
 → persist new metadata
 → commit DB
-→ delete old storage object
+→ delete old object
 
 If DB fails:
+
 cleanup new upload
 
 If cleanup fails:
+
 log orphan warning
 
-Never corrupt current image metadata because obsolete cleanup failed.
+Current valid image metadata must remain intact.
 
 ======================================================================
-65. CATEGORY SYSTEM
-======================================================================
+69. CATEGORY SYSTEM
+===================
 
 Category:
 
@@ -1999,36 +2379,41 @@ createdAt
 updatedAt
 
 Rules:
-- unique slug
-- inactive cannot receive new products
-- existing history preserved
-- prevent cycles
-- prefer deactivation
+
+* unique slug
+* inactive category cannot receive new products
+* history preserved
+* cycle prevention
+* prefer deactivation
 
 ======================================================================
-66. CUSTOMER NAVIGATION
-======================================================================
+70. CUSTOMER NAVIGATION
+=======================
 
 SHOP:
+
 All Products
 Categories
 New Arrivals
 Offers
 
 VEN+ REWARDS:
+
 Points Products
 My Points
 Points History
+Referrals
 
 ACCOUNT:
+
 My Orders
 Profile
 Addresses
 Settings
 
 ======================================================================
-67. CUSTOMER HOMEPAGE
-======================================================================
+71. CUSTOMER HOMEPAGE
+=====================
 
 Hero
 Categories
@@ -2038,34 +2423,38 @@ Rewards
 Points Products
 Delivery Estimate
 Shipping Benefit
-Current Promotions/Offers where actual promotion exists
+Current Promotions/Offers where a real promotion exists
 
 Authenticated:
+
 You have X Points
 
+Never invent data.
+
 ======================================================================
-68. SEARCH
-======================================================================
+72. SEARCH
+==========
 
 Support:
 
-- localized product title
-- category
-- SKU where appropriate
-- relevant attributes where justified
+* localized title
+* category
+* SKU where appropriate
+* relevant attributes where justified
 
 Search:
-- normalized
-- length limited
-- server-side
-- safely queried
-- paginated
+
+* normalized
+* length-limited
+* server-side
+* safely queried
+* paginated
 
 Search must never show inactive customer-ineligible entities.
 
 ======================================================================
-69. CATALOG FILTERS
-======================================================================
+73. CATALOG FILTERS
+===================
 
 Category
 Price range
@@ -2075,6 +2464,7 @@ Availability
 Sorting
 
 Sorting:
+
 Newest
 Price ascending
 Price descending
@@ -2083,60 +2473,8 @@ Relevance where supported
 No invented ranking logic.
 
 ======================================================================
-70. CART
-======================================================================
-
-Cart is persistent.
-
-Client state is a mirror.
-
-Cart operations:
-
-add
-remove
-increment
-decrement
-set quantity
-clear
-
-Every checkout:
-full server revalidation.
-
-======================================================================
-71. GUEST CART
-======================================================================
-
-If implemented:
-
-secure guest cart token.
-
-On authentication:
-validate
-merge
-deduplicate
-respect stock
-
-Do not lose an authenticated cart silently.
-
-======================================================================
-72. CUSTOMER ACCOUNT
-======================================================================
-
-Profile
-Orders
-Points
-Points History
-Referral Code
-Referral Statistics
-Addresses
-Settings
-
-Address changes:
-do NOT affect historical orders.
-
-======================================================================
-73. CUSTOMER ORDER HISTORY
-======================================================================
+74. CUSTOMER ORDER HISTORY
+==========================
 
 Display:
 
@@ -2152,8 +2490,8 @@ Delivery Estimate Snapshot
 Customer sees only owned orders.
 
 ======================================================================
-74. CUSTOMER ORDER DETAIL
-======================================================================
+75. CUSTOMER ORDER DETAIL
+=========================
 
 Show:
 
@@ -2167,11 +2505,11 @@ status timeline
 delivery estimate
 address snapshot where appropriate
 
-Do not recompute historical commercial values from current product data.
+Do not rebuild commercial values from current catalog data.
 
 ======================================================================
-75. ADMIN DASHBOARD
-======================================================================
+76. ADMIN DASHBOARD
+===================
 
 Dashboard
 Orders
@@ -2192,30 +2530,32 @@ Audit Logs
 No unnecessary support portal.
 
 ======================================================================
-76. ADMIN ORDERS
-======================================================================
+77. ADMIN ORDERS
+================
 
 Filters:
-- Order ID
-- customer
-- status
-- confirmation
-- date
-- governorate
+
+* Order ID
+* customer
+* status
+* confirmation
+* date
+* governorate
 
 Actions:
-- view
-- confirmation
-- authorized edit
-- cancel if legal
-- amend
-- correction if authorized
+
+* view
+* confirmation
+* authorized edit
+* cancel if legal
+* amend
+* correction if authorized
 
 Pagination mandatory.
 
 ======================================================================
-77. ADMIN CUSTOMER PAGE
-======================================================================
+78. ADMIN CUSTOMER PAGE
+=======================
 
 Show:
 
@@ -2227,11 +2567,11 @@ points history
 referral
 account status
 
-Do not expose secrets.
+Never expose secrets.
 
 ======================================================================
-78. ADMIN INVENTORY
-======================================================================
+79. ADMIN INVENTORY
+===================
 
 Show:
 
@@ -2243,11 +2583,8 @@ low stock
 out of stock
 last movement
 
-Actions:
+Manual Adjustment requires:
 
-Manual Adjustment
-
-Adjustment requires:
 quantity
 direction
 reason
@@ -2255,8 +2592,8 @@ reason
 Creates ledger + audit.
 
 ======================================================================
-79. ADMIN POINTS
-======================================================================
+80. ADMIN POINTS
+================
 
 Show:
 
@@ -2269,8 +2606,8 @@ recent ledger
 Allow controlled Admin adjustment.
 
 ======================================================================
-80. ADMIN REFERRAL
-======================================================================
+81. ADMIN REFERRAL
+==================
 
 Show:
 
@@ -2285,8 +2622,8 @@ reward transaction
 reversal transaction where applicable
 
 ======================================================================
-81. ADMIN DELIVERY
-======================================================================
+82. ADMIN DELIVERY
+==================
 
 Show:
 
@@ -2299,11 +2636,12 @@ errors
 history
 
 Return verification:
+
 ADMIN ONLY
 
 ======================================================================
-82. ADMIN SETTINGS
-======================================================================
+83. ADMIN SETTINGS
+==================
 
 General
 Shipping
@@ -2313,16 +2651,17 @@ Inventory
 Localization
 System
 
-Each setting:
-- typed
-- validated
-- audited
-- timestamped
-- actor recorded
+Every setting:
+
+* typed
+* validated
+* audited
+* timestamped
+* actor recorded
 
 ======================================================================
-83. APP SETTINGS — FINAL
-======================================================================
+84. APP SETTINGS — FINAL
+========================
 
 GLOBAL_SHIPPING_PRICE
 FREE_SHIPPING_POINTS_THRESHOLD
@@ -2331,7 +2670,7 @@ AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION
 REFERRAL_REWARD_POINTS
 LOW_STOCK_THRESHOLD
 
-Current defaults:
+Defaults:
 
 GLOBAL_SHIPPING_PRICE:
 70 EGP
@@ -2351,13 +2690,11 @@ REFERRAL_REWARD_POINTS:
 LOW_STOCK_THRESHOLD:
 5 units
 
-These are configurable runtime business settings.
-
-Historical transactions are NOT rewritten when settings change.
+Historical transactions are never rewritten when settings change.
 
 ======================================================================
-84. NOTIFICATION TYPES — FINAL
-======================================================================
+85. NOTIFICATION TYPES — FINAL
+==============================
 
 CUSTOMER:
 
@@ -2389,25 +2726,34 @@ DIGEST_FAILED
 SYSTEM_WARNING
 
 ======================================================================
-85. NOTIFICATION CREATION RULES
-======================================================================
+86. NOTIFICATION CREATION RULES
+===============================
 
 ORDER_CONFIRMATION_REQUIRED:
-exactly once when order enters Pending Confirmation.
+
+exactly once when order enters PENDING_CONFIRMATION.
 
 HIGH_CONFIRMATION_ATTEMPTS:
+
 created when attempt count reaches 3.
-Do not create duplicates for the same threshold.
 
 LOW_STOCK:
-created when stock crosses from > threshold to <= threshold.
-Do not create repeatedly while still below threshold.
+
+created when stock crosses:
+
+> threshold
+> →
+> <= threshold
+
+Do not repeatedly create while still below threshold.
 
 OUT_OF_STOCK:
+
 created when stock transitions to 0.
 
-When stock becomes positive again and later reaches zero:
-a new notification may be created.
+When stock returns above zero and later reaches zero:
+
+new notification may be created.
 
 ORDER_SHIPPED:
 once per shipment transition.
@@ -2424,9 +2770,11 @@ once per reward activation.
 REFERRAL_REWARD_REVERSED:
 once per reversal event.
 
+All notification triggers must be idempotent.
+
 ======================================================================
-86. NOTIFICATION STORAGE
-======================================================================
+87. NOTIFICATION STORAGE
+========================
 
 Notification:
 
@@ -2444,85 +2792,89 @@ createdAt
 Unique/deduplication semantics must prevent unintended duplicates.
 
 ======================================================================
-87. FINANCIAL REPORTING — FINAL DEFINITIONS
-======================================================================
+88. FINANCIAL REPORTING — FINAL
+===============================
 
 Because payment is Cash on Delivery:
 
 GROSS MERCHANDISE SALES:
+
 sum of CASH SUBTOTAL for non-cancelled orders.
 
 GROSS ORDER VALUE:
+
 sum of TOTAL CASH DUE for non-cancelled orders.
 
 DELIVERED REVENUE:
+
 sum of TOTAL CASH DUE for DELIVERED orders.
 
 REFUSED VALUE:
+
 sum of TOTAL CASH DUE for CUSTOMER_REFUSED orders.
 
 CANCELLED VALUE:
+
 sum of TOTAL CASH DUE for CANCELLED orders.
 
 OUTSTANDING COD:
+
 sum of TOTAL CASH DUE for:
+
 PENDING_CONFIRMATION
 CONFIRMED
 PROCESSING
 SHIPPED
 
-POINTS REDEMPTION IS NOT CASH REVENUE.
+Points redemption is NOT EGP revenue.
 
 Points have zero EGP monetary value in reporting.
-
-FREE SHIPPING affects cash shipping amount:
-0 EGP when redeemed.
 
 Do not include cancelled orders in Gross Sales.
 
 Do not classify Pending Confirmation as realized revenue.
 
 ======================================================================
-88. REPORTING TIME SEMANTICS
-======================================================================
+89. REPORTING TIME SEMANTICS
+============================
 
 Reports must specify date basis.
 
 Default:
-createdAt for order volume/bookings
 
-For delivered revenue:
+order volume/bookings:
+createdAt
+
+delivered revenue:
 delivery transition timestamp
 
-For cancelled:
+cancelled:
 cancellation timestamp where available
 
-For refused:
-refusal transition timestamp
+refused:
+refusal transition timestamp where available
 
 Never mix event timestamps silently.
 
 ======================================================================
-89. ORDER VALUE VS CASH COLLECTION
-======================================================================
-
-Because payment is COD:
+90. ORDER VALUE VS CASH COLLECTION
+==================================
 
 An order can exist without cash being collected.
 
-Therefore:
-
 Order Value:
-commercial obligation/sale booking
 
-Collected/Realized Revenue:
+commercial obligation / booking
+
+Collected / Realized Revenue:
+
 Delivered COD orders
 
-Do NOT call pending COD revenue "collected revenue".
+Do NOT call pending COD revenue collected revenue.
 
 ======================================================================
-90. EXCEL EXPORT
-======================================================================
+91. EXCEL EXPORT
+================
 
 Admin export supports:
 
@@ -2533,19 +2885,21 @@ customer
 governorate
 
 Canonical key:
+
 Order ID
 
-Export must contain:
-- stable headers
-- deterministic formats
-- safe cell encoding
-- no formula injection
-- localized human-readable columns where useful
-- canonical machine-readable fields where needed
+Export contains:
+
+* stable headers
+* deterministic formats
+* safe cell encoding
+* no formula injection
+* localized human-readable columns where useful
+* canonical machine-readable fields where needed
 
 ======================================================================
-91. ORDER EXCEL IMPORT
-======================================================================
+92. ORDER EXCEL IMPORT
+======================
 
 Flow:
 
@@ -2574,44 +2928,47 @@ AUDIT
 RESULT REPORT
 
 ======================================================================
-92. EXCEL DUPLICATE KEY — FINAL
-======================================================================
+93. EXCEL DUPLICATE KEY — FINAL
+===============================
 
 Exact file replay:
+
 fileHash
 
 Constraint:
+
 same import type + same fileHash
 → duplicate import
 
 Within one import:
+
 (importId, orderId)
-must be unique
+must be unique where applicable.
 
 Normalized row fingerprint:
 
 SHA-256(
-  importType
-  +
-  orderId
-  +
-  sorted normalized editable field/value pairs
+importType
++
+orderId
++
+sorted normalized editable field/value pairs
 )
 
 Store fingerprint.
 
-If identical business mutation is re-submitted:
+If identical business mutation is resubmitted:
+
 NO-OP / ALREADY_PROCESSED
 
-If same order has a legitimately different approved change:
+If same order receives legitimate different approved change:
+
 new fingerprint
 → process
 
-This makes duplicate detection deterministic.
-
 ======================================================================
-93. EXCEL EDITABLE FIELDS — FINAL
-======================================================================
+94. EXCEL EDITABLE FIELDS — FINAL
+=================================
 
 Allowed:
 
@@ -2641,56 +2998,66 @@ order status
 payment method
 funding mode
 
-If future approval enables more fields:
-update whitelist + schema + audit + tests.
+Future approval of additional fields requires:
+
+whitelist update
++
+schema update
++
+audit update
++
+tests
 
 ======================================================================
-94. EXCEL SECURITY
-======================================================================
+95. EXCEL SECURITY
+==================
 
-Excel is untrusted.
+Excel is untrusted input.
 
 Validate:
-- extension
-- actual content
-- file size
-- workbook
-- sheet structure
-- required headers
-- types
-- Order IDs
-- status values
-- allowed columns
+
+* extension
+* actual content
+* file size
+* workbook
+* sheet structure
+* required headers
+* types
+* Order IDs
+* status values
+* allowed columns
 
 Protect against:
-- formula injection
-- malformed workbook
-- memory abuse
-- mass assignment
-- duplicate processing
-- malicious payloads
+
+* formula injection
+* malformed workbooks
+* memory abuse
+* mass assignment
+* duplicate processing
+* malicious payloads
 
 Never execute formulas.
 
 ======================================================================
-95. EXCEL PERFORMANCE
-======================================================================
+96. EXCEL PERFORMANCE
+=====================
 
-No arbitrary benchmark claims.
+Do not make unsupported benchmark claims.
 
 Use:
-- streaming
-- batching
-- limited selected columns
-- bounded memory
-- efficient bulk operations
-- progress tracking
+
+* streaming
+* batching
+* selected columns
+* bounded memory
+* efficient bulk operations
+* progress tracking
 
 Data integrity > throughput.
 
 ======================================================================
-96. RBAC — FINAL
-======================================================================
+97. RBAC — FINAL
+================
 
 Current roles:
 
@@ -2699,9 +3066,9 @@ ADMIN
 
 No public role selection.
 
-All privileged operations use server authorization.
+All privileged operations use server-side authorization.
 
-Examples of future permission concepts:
+Future concepts may include:
 
 products.read
 products.write
@@ -2717,113 +3084,126 @@ settings.write
 audit.read
 reports.read
 
-Do not implement future subroles until approved.
-
-Current authorization:
-ADMIN only.
+Do not implement future subroles without approval.
 
 ======================================================================
-97. ADMIN RETURN VERIFICATION PERMISSION
-======================================================================
+98. ADMIN RETURN VERIFICATION PERMISSION
+========================================
 
-Current Phase 1:
+Phase 1:
 
 Only ADMIN can:
-- mark warehouse received
-- mark return verified
-- restore inventory
 
-Future role granularity may introduce:
+* mark warehouse received
+* mark return verified
+* restore inventory
+
+Future permission granularity may introduce:
 
 delivery.return.verify
 
-but not now.
+but NOT now.
 
 ======================================================================
-98. SECURITY
-======================================================================
+99. SECURITY
+============
 
 Implement:
 
-- secure sessions
-- HttpOnly cookies
-- Secure production cookies
-- SameSite
-- rate limiting
-- Zod
-- server authorization
-- anti-enumeration
-- Argon2id
-- CSRF protection as applicable
-- security headers
-- safe uploads
-- Excel security
-- IDOR prevention
-- privilege escalation prevention
-- mass assignment prevention
-- audit logging
-- replay protection
-- idempotency
+* secure sessions
+* HttpOnly cookies
+* Secure production cookies
+* SameSite
+* rate limiting
+* Zod
+* server authorization
+* anti-enumeration
+* Argon2id
+* CSRF protection as applicable
+* security headers
+* safe uploads
+* Excel security
+* IDOR prevention
+* privilege escalation prevention
+* mass assignment prevention
+* audit logging
+* replay protection
+* idempotency
+* OAuth state protection
+* OAuth account-linking protection
 
 Never expose:
-- password
-- password hash
-- token
-- OTP
-- secret
-- internal stack trace
+
+* password
+* password hash
+* token
+* OTP
+* secret
+* OAuth secret
+* provider token
+* internal stack trace
 
 ======================================================================
-99. RATE LIMITS — FINAL BASELINE
-======================================================================
-
-These are default operational limits and may be adjusted through secure infrastructure config,
-but implementation must start with these values.
+100. RATE LIMITS — FINAL BASELINE
+=================================
 
 LOGIN:
+
 5 failed attempts / 15 minutes per IP + normalized email
 20 attempts / 15 minutes per IP
 
 After repeated failures:
+
 progressive delay
-and temporary throttling
++
+temporary throttling
 
 REGISTRATION:
+
 5 registrations / 15 minutes per IP
 20 / 24 hours per IP
 
 PASSWORD RESET REQUEST:
+
 3 / 15 minutes per IP
 3 / hour per normalized email
 
 EMAIL VERIFICATION RESEND:
+
 3 / hour per account
 
 CHECKOUT:
+
 5 checkout attempts / minute per authenticated user
 20 / hour per authenticated user
 
 SEARCH:
+
 60 / minute per IP
 
 ORDER EXCEL IMPORT:
-5 imports / hour per Admin
+
+5 / hour per Admin
 
 DELIVERY EXCEL IMPORT:
-5 imports / hour per Admin
+
+5 / hour per Admin
 
 IMAGE UPLOAD:
-60 image mutations / hour per Admin
+
+60 mutations / hour per Admin
 
 Sensitive Admin mutation APIs:
-100 requests / minute per Admin session as baseline.
 
-Implement rate limiting using appropriate production storage;
-do not rely on process-local memory in multi-instance deployment.
+100 requests / minute per Admin session baseline
+
+Production rate limiting MUST use shared storage in multi-instance deployments.
+
+Do not rely only on process-local memory.
 
 ======================================================================
-100. RETENTION POLICY — FINAL BASELINE
-======================================================================
+101. RETENTION POLICY — FINAL BASELINE
+======================================
 
 Commercial history:
 
@@ -2858,9 +3238,13 @@ Admin notifications:
 180 days
 
 Sessions:
-expire by policy;
-inactive sessions invalidated after 30 days customer,
-12 hours maximum Admin session
+expire by policy
+
+Customer session:
+30 days maximum
+
+Admin session:
+12 hours maximum
 
 Email verification tokens:
 15 minutes
@@ -2874,8 +3258,8 @@ Idempotency records:
 Excel import metadata:
 24 months
 
-Uploaded raw import files:
-90 days unless required longer for audit/compliance
+Raw import files:
+90 days unless required longer
 
 DigestExecution:
 24 months
@@ -2883,30 +3267,37 @@ DigestExecution:
 Temporary image/orphan cleanup records:
 90 days
 
-These are baseline policies and may be extended by legal/business requirements.
-
-Never delete commercial history solely for convenience.
+Never delete commercial history merely for convenience.
 
 ======================================================================
-101. SOFT DELETE
-======================================================================
+102. SOFT DELETE
+================
 
 Prefer:
-isActive / archivedAt
+
+isActive
+archivedAt
 
 for:
-- products
-- categories
-- users
-- variants
+
+* products
+* categories
+* users
+* variants
 
 Do not destroy referenced commercial history.
 
 ======================================================================
-102. IDOR PROTECTION
-======================================================================
+103. IDOR PROTECTION
+====================
 
-Every protected object operation must verify ownership/relationship.
+Every protected object operation must verify:
+
+ownership
++
+relationship
++
+authorization
 
 Examples:
 
@@ -2920,28 +3311,30 @@ Variant:
 variantId + productId
 
 Customer:
-userId from authenticated Admin/permission
+authenticated Admin/approved authorization
 
-Never trust IDs merely because they are difficult to guess.
+Never trust object IDs merely because they are hard to guess.
 
 ======================================================================
-103. MASS ASSIGNMENT
-======================================================================
+104. MASS ASSIGNMENT
+====================
 
 Never use:
 
 update(data)
 
-with uncontrolled client object.
+with uncontrolled client objects.
 
 Use:
+
 validated schema
 +
 explicit mapping
 +
 domain command
 
-Never allow:
+Never allow mass assignment of:
+
 role
 pointsBalance
 stock
@@ -2949,105 +3342,128 @@ price
 total
 permissions
 
-to be mass-assigned.
-
 ======================================================================
-104. MONEY
-======================================================================
+105. MONEY
+==========
 
-Never use floating-point numbers for authoritative monetary calculations.
+Currency:
 
-Use precise decimal/integer representation.
-
-Store monetary values consistently.
-
-Document currency:
 EGP
 
+Never use floating point for authoritative monetary calculations.
+
+Use precise Decimal/integer-compatible representation.
+
 Points:
+
 integer
 
 Quantity:
+
 positive integer
 
-======================================================================
-105. IMAGE SECURITY
-======================================================================
+All persisted values must be deterministic.
 
-Validate actual content.
+======================================================================
+106. IMAGE SECURITY
+===================
+
+Validate actual file content.
 
 Restrict:
-- file type
-- size
-- extension
-- image dimensions
-- storage destination
+
+* type
+* size
+* extension
+* image dimensions
+* storage destination
 
 Use server-generated storage keys.
 
 Never execute uploaded content.
 
 ======================================================================
-106. PERFORMANCE
-======================================================================
+107. PERFORMANCE
+================
 
 Optimize:
 
-- no N+1
-- indexed queries
-- pagination
-- selective Prisma fields
-- aggregate stock queries
-- efficient variants
-- efficient images
-- bounded Excel processing
-- minimized client JS
-- Server Components where appropriate
-- Suspense/loading boundaries
+* no N+1
+* indexed queries
+* pagination
+* selective Prisma fields
+* aggregate stock queries
+* efficient variants
+* efficient images
+* bounded Excel processing
+* minimized client JavaScript
+* Server Components where appropriate
+* Suspense/loading boundaries
 
 Do not introduce complexity without evidence.
 
 ======================================================================
-107. SEARCH QUERY SAFETY
-======================================================================
+108. SEARCH QUERY SAFETY
+========================
 
 Search:
-- trim
-- length limit
-- normalize
-- safely parameterize
+
+* trim
+* length limit
+* normalize
+* safely parameterize
+
+Sort fields:
+
+strict whitelist
+
+Filter fields:
+
+strict whitelist
 
 No raw SQL interpolation.
 
-Sort fields:
-strict whitelist.
-
-Filter fields:
-strict whitelist.
-
 ======================================================================
-108. SEO
-======================================================================
+109. SEO
+========
 
 Public storefront:
 
-- localized metadata
-- canonical URLs
-- Open Graph
-- product metadata
-- category metadata
+* localized metadata
+* canonical URLs
+* Open Graph
+* product metadata
+* category metadata
+* structured content
+* sitemap where appropriate
 
 Do not index:
-- Admin
-- account
-- internal API
-- private routes
 
-Generate sitemap for public content if appropriate.
+* Admin
+* account
+* internal API
+* private routes
 
 ======================================================================
-109. OBSERVABILITY
+110. CACHING
+============
+
+Cache only data safe to cache.
+
+Never use cached frontend values as checkout authority.
+
+Checkout always re-reads:
+
+* price
+* points price
+* stock
+* shipping
+* delivery estimate
+* points balance
+
 ======================================================================
+111. OBSERVABILITY
+==================
 
 Structured logs.
 
@@ -3063,67 +3479,75 @@ AUDIT
 Include correlation/request ID where useful.
 
 Never log:
-- passwords
-- hashes
-- tokens
-- OTPs
-- cookies
-- authorization headers
+
+* passwords
+* password hashes
+* tokens
+* OTPs
+* cookies
+* authorization headers
+* OAuth secrets
+* provider tokens
 
 ======================================================================
-110. HEALTH CHECKS
-======================================================================
+112. HEALTH CHECKS
+==================
 
-Provide operational endpoints where appropriate:
+Provide:
 
 /api/health
 /api/ready
 
 Distinguish:
+
 process alive
-from
+
+from:
+
 database/storage readiness
 
 Do not leak sensitive diagnostics.
 
 ======================================================================
-111. DAILY DIGEST
-======================================================================
+113. DAILY DIGEST
+=================
 
 Schedule:
+
 00:00 UTC
 
 Aggregate previous 24h:
 
-- Gross Merchandise Sales
-- Gross Order Value
-- Delivered Revenue
-- Refused Value
-- Cancelled Value
-- Outstanding COD
-- New customers
-- Delivered orders
-- Low stock
-- Top variants
-- Points redeemed
-- Points earned
-- Referral rewards
-- Import failures
+* Gross Merchandise Sales
+* Gross Order Value
+* Delivered Revenue
+* Refused Value
+* Cancelled Value
+* Outstanding COD
+* New customers
+* Delivered orders
+* Low stock
+* Top variants
+* Points redeemed
+* Points earned
+* Referral rewards
+* Import failures
 
 Use:
 
 IEmailProvider
 
 Track:
+
 DigestExecution
 
 No duplicate send.
 
 ======================================================================
-112. REPORT DEFINITIONS
-======================================================================
+114. REPORT DEFINITIONS
+=======================
 
-Revenue metrics must always display their definition.
+Every financial metric MUST explicitly state its semantic definition.
 
 Example:
 
@@ -3133,19 +3557,20 @@ not:
 
 "Revenue"
 
-unless the semantic definition is unambiguous.
+unless the definition is unambiguous.
 
 ======================================================================
-113. ORDER AMENDMENT FINANCIAL RULE
-======================================================================
+115. ORDER AMENDMENT FINANCIAL RULE
+===================================
 
-If an order amendment changes:
-- quantity
-- product
-- variant
-- purchaseMode
+If amendment changes:
 
-then the system must recompute:
+* quantity
+* product
+* variant
+* purchaseMode
+
+recompute:
 
 cashSubtotal
 pointsSubtotal
@@ -3155,29 +3580,31 @@ pointsRedeemed
 delivery reward snapshot
 inventory effects
 
-Any old reservation/effect must be reversed appropriately.
+Old pending effects must be reversed where required.
 
 No silent mutation.
 
 ======================================================================
-114. CART / POINTS PURCHASE
-======================================================================
+116. CART / POINTS PURCHASE
+===========================
 
-The cart may retain intended purchaseMode per item.
+Cart may retain intended purchaseMode per item.
 
 At checkout:
+
 server revalidates.
 
-If points balance is insufficient:
+If points balance insufficient:
+
 entire transaction fails.
 
 No partial conversion to cash.
 
-The user must explicitly change purchase mode if the UI supports it.
+User must explicitly change purchase mode if the UI supports it.
 
 ======================================================================
-115. CUSTOMER PRODUCT PURCHASE UX
-======================================================================
+117. CUSTOMER PRODUCT PURCHASE UX
+=================================
 
 For points-enabled product:
 
@@ -3193,18 +3620,17 @@ Actions:
 Add to Cart
 Buy with Points
 
-If "Buy with Points":
-the item enters cart with:
+Buy with Points creates cart item:
 
 purchaseMode = POINTS
 
-No hidden automatic conversion.
+No automatic hidden conversion.
 
 ======================================================================
-116. FREE SHIPPING REDEMPTION UX
-======================================================================
+118. FREE SHIPPING REDEMPTION UX
+================================
 
-At checkout:
+Checkout example:
 
 Current Points:
 700
@@ -3228,15 +3654,15 @@ Remaining:
 No partial discount.
 
 ======================================================================
-117. POINTS + SHIPPING DISPLAY
-======================================================================
+119. POINTS + SHIPPING DISPLAY
+==============================
 
-For:
+Example:
 
 500 product points
 70 cash shipping
 
-display:
+Display:
 
 Product:
 500 Points
@@ -3250,15 +3676,16 @@ Total Cash Due:
 Total Points:
 500
 
-For:
+For free shipping:
 
 500 product points
 200 free shipping
 
-display:
+Display:
 
 Product:
 500 Points
+
 Free Shipping:
 200 Points
 
@@ -3269,11 +3696,13 @@ Total Points:
 700
 
 ======================================================================
-118. PAYMENT LANGUAGE
-======================================================================
+120. PAYMENT LANGUAGE
+=====================
 
 DO NOT display:
-"Payment Method: Points"
+
+Payment Method:
+Points
 
 Instead:
 
@@ -3286,8 +3715,8 @@ Points Redemption / Mixed / Cash
 This prevents semantic confusion.
 
 ======================================================================
-119. DELIVERY STATUS
-======================================================================
+121. DELIVERY STATUS
+====================
 
 DeliveryStatus:
 
@@ -3300,15 +3729,13 @@ RETURN_IN_TRANSIT
 WAREHOUSE_RECEIVED
 WAREHOUSE_RETURN_VERIFIED
 
-These internal states are not necessarily customer-facing order statuses.
+Internal warehouse states are not necessarily customer-facing.
 
 ======================================================================
-120. CUSTOMER-FACING ORDER STATUS
-======================================================================
+122. CUSTOMER-FACING ORDER STATUS
+=================================
 
-Customer-facing status should remain simple.
-
-Primary display:
+Customer-facing statuses:
 
 Pending confirmation
 Confirmed
@@ -3321,8 +3748,8 @@ Cancelled
 Do not expose internal warehouse states unless useful.
 
 ======================================================================
-121. AUDIT ARCHITECTURE
-======================================================================
+123. AUDIT ARCHITECTURE
+=======================
 
 Separate:
 
@@ -3332,75 +3759,34 @@ OrderConfirmationAttempt
 OrderStatusHistory
 PointsTransaction
 InventoryTransaction
-Import history
+Import History
+OAuth security events where needed
 
-Do not collapse these into one generic table.
+Do not collapse them into one generic table.
 
 ======================================================================
-122. AUDIT IMMUTABILITY
-======================================================================
+124. AUDIT IMMUTABILITY
+=======================
 
 Audit records:
+
 append-only
 
 No normal edit.
+
 No normal delete.
 
-If retention cleanup is later required:
-controlled maintenance operation.
+Controlled maintenance only.
 
 ======================================================================
-123. DATABASE ENTITIES
-======================================================================
-
-Required conceptual entities:
-
-User
-Referral
-
-Category
-Product
-ProductVariant
-ProductImage
-
-Cart
-CartItem
-
-Order
-OrderItem
-OrderStatusHistory
-
-OrderConfirmation
-OrderConfirmationAttempt
-OrderDataChange
-OrderAmendment
-
-PointsTransaction
-InventoryTransaction
-
-DeliveryImport
-DeliveryImportRow
-
-Notification
-
-AuditLog
-AppSetting
-
-DigestExecution
-IdempotencyKey
-
-Payment
-only where future architecture requires it
-
-======================================================================
-124. USER MODEL
-======================================================================
+125. USER MODEL
+===============
 
 User:
 
 id
 email
-passwordHash
+passwordHash nullable
 fullName
 phone
 role
@@ -3412,12 +3798,19 @@ createdAt
 updatedAt
 
 Roles:
+
 CUSTOMER
 ADMIN
 
+OAuth-only users may have:
+
+passwordHash = NULL
+
+subject to authentication policy.
+
 ======================================================================
-125. ADDRESS MODEL
-======================================================================
+126. ADDRESS MODEL
+==================
 
 Address:
 
@@ -3441,13 +3834,11 @@ isDefault
 createdAt
 updatedAt
 
-Historical orders DO NOT reference mutable Address as their source of truth.
-
-They snapshot it.
+Historical orders snapshot values.
 
 ======================================================================
-126. PRODUCT IMAGE MODEL
-======================================================================
+127. PRODUCT IMAGE MODEL
+========================
 
 ProductImage:
 
@@ -3462,8 +3853,8 @@ createdAt
 updatedAt
 
 ======================================================================
-127. ORDER CONFIRMATION MODEL
-======================================================================
+128. ORDER CONFIRMATION MODEL
+=============================
 
 OrderConfirmation:
 
@@ -3475,8 +3866,8 @@ confirmedAt
 notes
 
 ======================================================================
-128. ORDER AMENDMENT MODEL
-======================================================================
+129. ORDER AMENDMENT MODEL
+==========================
 
 OrderAmendment:
 
@@ -3500,11 +3891,9 @@ APPLIED
 REJECTED
 FAILED
 
-Only APPROVED/validated amendments may apply business effects.
-
 ======================================================================
-129. IMPORT MODEL
-======================================================================
+130. IMPORT MODEL
+=================
 
 Import:
 
@@ -3521,7 +3910,7 @@ status
 createdAt
 completedAt
 
-Row:
+Import Row:
 
 id
 importId
@@ -3533,13 +3922,9 @@ errorCode
 errorMessage
 createdAt
 
-Unique:
-importId + orderId
-for delivery/order imports where one order may appear once per file.
-
 ======================================================================
-130. NOTIFICATION MODEL
-======================================================================
+131. NOTIFICATION MODEL
+=======================
 
 Notification:
 
@@ -3555,23 +3940,22 @@ metadata
 createdAt
 
 ======================================================================
-131. SETTINGS HISTORY
-======================================================================
+132. SETTINGS HISTORY
+=====================
 
 Business-critical setting changes must be auditable.
 
-Do not rely only on current AppSetting value.
+Capture:
 
-Audit captures:
-- previous
-- new
-- actor
-- timestamp
-- reason if required
+* previous value
+* new value
+* actor
+* timestamp
+* reason where required
 
 ======================================================================
-132. API / SERVER ACTION SECURITY CONTRACT
-======================================================================
+133. API / SERVER ACTION SECURITY CONTRACT
+==========================================
 
 Every state-changing operation:
 
@@ -3583,25 +3967,26 @@ Authenticate
 → Audit
 → Return safe DTO
 
-Never return raw Prisma model blindly.
+Never return raw database model blindly.
 
 ======================================================================
-133. RESPONSE DTO POLICY
-======================================================================
+134. RESPONSE DTO POLICY
+========================
 
-Server returns DTOs.
+Server returns safe DTOs.
 
-Do not expose:
-- passwordHash
-- roles unnecessarily
-- internal audit data
-- secret metadata
-- provider credentials
-- internal errors
+Never expose:
+
+* passwordHash
+* provider credentials
+* secrets
+* internal stack traces
+* authorization secrets
+* unnecessary sensitive metadata
 
 ======================================================================
-134. ERROR TAXONOMY
-======================================================================
+135. ERROR TAXONOMY
+===================
 
 VALIDATION_ERROR
 UNAUTHENTICATED
@@ -3621,40 +4006,41 @@ IMPORT_INVALID
 RATE_LIMITED
 STORAGE_ERROR
 EMAIL_ERROR
+OAUTH_ERROR
 INTERNAL_ERROR
 
-Map to localized safe messages.
+Map to safe localized messages.
 
 ======================================================================
-135. ADMIN DASHBOARD INFORMATION ARCHITECTURE
-======================================================================
+136. ADMIN DASHBOARD INFORMATION ARCHITECTURE
+=============================================
 
 DASHBOARD
 
 ORDERS
-  All Orders
-  Confirmation Queue
-  Amendments
-  Import / Export
+All Orders
+Confirmation Queue
+Amendments
+Import / Export
 
 CUSTOMERS
 
 CATALOG
-  Products
-  Categories
-  Variants
-  Media
+Products
+Categories
+Variants
+Media
 
 INVENTORY
 
 REWARDS
-  Points
-  Points Products
-  Referrals
+Points
+Points Products
+Referrals
 
 DELIVERY
-  Imports
-  Return Verification
+Imports
+Return Verification
 
 REPORTS
 
@@ -3665,30 +4051,30 @@ SETTINGS
 AUDIT LOGS
 
 ======================================================================
-136. CUSTOMER INFORMATION ARCHITECTURE
-======================================================================
+137. CUSTOMER INFORMATION ARCHITECTURE
+======================================
 
 SHOP
-  All Products
-  Categories
-  Search
-  Offers
+All Products
+Categories
+Search
+Offers
 
 REWARDS
-  Points Products
-  My Points
-  Points History
-  Referrals
+Points Products
+My Points
+Points History
+Referrals
 
 ACCOUNT
-  Orders
-  Profile
-  Addresses
-  Settings
+Orders
+Profile
+Addresses
+Settings
 
 ======================================================================
-137. ADMIN PRODUCT TABLE
-======================================================================
+138. ADMIN PRODUCT TABLE
+========================
 
 Product
 Category
@@ -3702,6 +4088,7 @@ Status
 Actions
 
 Actions:
+
 View
 Edit
 Deactivate
@@ -3709,8 +4096,8 @@ Manage Images
 Manage Variants
 
 ======================================================================
-138. ADMIN INVENTORY TABLE
-======================================================================
+139. ADMIN INVENTORY TABLE
+==========================
 
 Product
 Variant
@@ -3722,8 +4109,8 @@ Last Movement
 Actions
 
 ======================================================================
-139. ADMIN ORDER TABLE
-======================================================================
+140. ADMIN ORDER TABLE
+======================
 
 Order ID
 Customer
@@ -3737,8 +4124,8 @@ Shipping
 Actions
 
 ======================================================================
-140. ADMIN CONFIRMATION TABLE
-======================================================================
+141. ADMIN CONFIRMATION TABLE
+=============================
 
 Order ID
 Customer
@@ -3750,8 +4137,8 @@ High Attempt Warning
 Actions
 
 ======================================================================
-141. ADMIN REFERRAL TABLE
-======================================================================
+142. ADMIN REFERRAL TABLE
+=========================
 
 Referral Code
 Referrer
@@ -3763,8 +4150,8 @@ Reward Amount
 Actions
 
 ======================================================================
-142. ADMIN IMPORT TABLE
-======================================================================
+143. ADMIN IMPORT TABLE
+=======================
 
 Import ID
 Type
@@ -3778,8 +4165,8 @@ Status
 Actions
 
 ======================================================================
-143. ADMIN AUDIT TABLE
-======================================================================
+144. ADMIN AUDIT TABLE
+======================
 
 Timestamp
 Actor
@@ -3792,25 +4179,29 @@ Details
 Read-only.
 
 ======================================================================
-144. CUSTOMER UI PRINCIPLES
-======================================================================
+145. CUSTOMER UI PRINCIPLES
+===========================
 
 Always provide:
-- loading
-- empty
-- error
-- success
-- retry
 
-Never fake zero values if data failed to load.
+* loading
+* empty
+* error
+* success
+* retry
 
-Never show stale financial values as current without indication.
+Never fake zero values.
+
+Never represent failed data retrieval as valid zero state.
+
+Never present stale financial state as authoritative.
 
 ======================================================================
-145. RESPONSIVE DESIGN
-======================================================================
+146. RESPONSIVE DESIGN
+======================
 
 Support:
+
 mobile
 tablet
 desktop
@@ -3818,15 +4209,18 @@ desktop
 No critical customer action depends on hover.
 
 Admin mobile:
-collapsible navigation
-usable tables
-responsive detail pages
+
+* collapsible navigation
+* usable responsive tables
+* responsive detail pages
+* touch-friendly controls
 
 ======================================================================
-146. ACCESSIBILITY
-======================================================================
+147. ACCESSIBILITY
+==================
 
 Use:
+
 semantic HTML
 keyboard navigation
 focus management
@@ -3838,28 +4232,30 @@ non-color-only statuses
 RTL/LTR accessibility
 
 ======================================================================
-147. SEO
-======================================================================
+148. SEO
+========
 
 Public pages:
+
 metadata
-canonical
+canonical URLs
 Open Graph
-structured content
+structured product/category data
 localized URLs
+sitemap where appropriate
 
-Private/admin:
-no indexing
+Private/admin routes must not be indexed.
 
 ======================================================================
-148. CACHING
-======================================================================
+149. CACHING
+============
 
 Cache only data safe to cache.
 
-Never use cached frontend values as checkout authority.
+Never use cached frontend data as checkout authority.
 
-Checkout always re-reads:
+Checkout must re-read:
+
 price
 points price
 stock
@@ -3868,175 +4264,263 @@ delivery estimate
 points balance
 
 ======================================================================
-149. PERFORMANCE
-======================================================================
+150. PERFORMANCE
+================
 
 Mandatory:
-- no N+1
-- pagination
-- selective DB fields
-- efficient images
-- bounded Excel memory
-- minimized JS
-- proper indexes
-- Server Components where useful
-- Suspense where useful
+
+* no N+1
+* pagination
+* selective DB fields
+* efficient images
+* bounded Excel memory
+* minimized client JS
+* proper indexes
+* Server Components where useful
+* Suspense where useful
+
+No speculative complexity.
 
 ======================================================================
-150. TESTING STRATEGY
-======================================================================
+151. SEARCH QUERY SAFETY
+========================
 
-Vitest:
-- unit
-- services
-- database
-- transactions
-- invariants
-- concurrency
+Search:
 
-Playwright:
-- registration
-- verification
-- login
-- storefront
-- cart
-- checkout
-- points
-- referral
-- Admin
-- confirmation
-- Excel
-- delivery
-- correction flows
-- RTL/LTR
+* trim
+* length-limit
+* normalize
+* safely parameterize
+
+Sorting:
+
+strict whitelist
+
+Filtering:
+
+strict whitelist
+
+Never interpolate raw query values into SQL.
 
 ======================================================================
-151. REQUIRED AUTH TESTS
+152. SECURITY MATRIX
+====================
+
+Maintain:
+
+Threat
+Surface
+Mitigation
+Implementation
+Test
+Residual Risk
+Status
+
+At minimum cover:
+
+Authentication
+Authorization
+IDOR
+Privilege Escalation
+CSRF
+XSS
+Injection
+Mass Assignment
+Upload Security
+Excel Security
+OAuth Security
+Replay
+Rate Limiting
+Points Abuse
+Referral Abuse
+Inventory Abuse
+Session Security
+Secret Leakage
+
 ======================================================================
+153. BUSINESS RULE MATRIX
+=========================
+
+Maintain:
+
+Rule ID
+Rule
+Authoritative Service
+DB Enforcement
+Transaction Requirement
+Idempotency Requirement
+Audit Requirement
+Test
+Status
+
+No critical business rule may exist only in UI or documentation.
+
+======================================================================
+154. REQUIREMENT TRACEABILITY
+=============================
+
+Every critical requirement maps:
+
+Requirement
+→ Domain
+→ Service
+→ Schema
+→ API / Server Action
+→ UI
+→ Test
+→ Documentation
+
+======================================================================
+155. REQUIRED AUTH TESTS
+========================
 
 Test:
-- Admin login
-- customer login
-- wrong password
-- role escalation
-- unauthorized Admin
-- email verification
-- checkout blocked before verification
-- password reset
-- session expiry
-- enumeration protection
-- rate limit
+
+Admin login
+Customer login
+Wrong password
+Role escalation
+Unauthorized Admin access
+Email verification
+Checkout blocked before verification
+Password reset
+Session expiry
+Enumeration protection
+Rate limiting
+First Google login
+Returning Google login
+Invalid OAuth callback
+Duplicate provider identity
+Account linking
+Unsafe account linking
+Google cannot create Admin
+Google cannot elevate Customer
+OAuth failure recovery
+OAuth session creation
 
 ======================================================================
-152. REQUIRED PAYMENT TESTS
-======================================================================
+156. REQUIRED PAYMENT TESTS
+===========================
 
-Because current payment is COD:
-
-Test:
-- CASH_ONLY
-- POINTS_ONLY
-- MIXED
-- cash product + paid shipping
-- points product + paid shipping
-- cash product + free shipping
-- points product + free shipping
-- mixed cart
-- cash due
-- points due
-- no fake gateway transaction
-
-======================================================================
-153. REQUIRED POINTS TESTS
-======================================================================
+Because Phase 1 is COD:
 
 Test:
-- product redemption
-- no partial product redemption
-- mixed cart
-- free shipping
-- insufficient points
-- refund
-- duplicate refund
-- delivery reward
-- points-purchased reward setting
-- correction reversal
-- referral reward
-- referral reversal
-- re-award after correction
-- Admin adjustment
+
+CASH_ONLY
+POINTS_ONLY
+MIXED
+Cash product + paid shipping
+Points product + paid shipping
+Cash product + free shipping
+Points product + free shipping
+Mixed cart
+Cash due
+Points due
+No fake gateway
+No fake settlement
 
 ======================================================================
-154. REQUIRED REFERRAL TESTS
-======================================================================
-
-Test:
-valid code
-invalid code
-self referral
-no code
-late assignment attempt
-one referee / one referrer
-first delivered reward
-second delivered no second reward
-delivered→refused reversal
-refused→delivered re-award
-duplicate import
-concurrent processing
-
-======================================================================
-155. REQUIRED INVENTORY TESTS
-======================================================================
+157. REQUIRED POINTS TESTS
+==========================
 
 Test:
-- final-unit race
-- insufficient stock
-- cancellation restore
-- duplicate cancellation
-- refusal no restore
-- return verification restore
-- duplicate return verification
-- Admin stock adjustment
-- order amendment inventory delta
+
+Product redemption
+No partial redemption
+Mixed cart
+Free shipping
+Insufficient points
+Points refund
+Duplicate refund
+Delivery reward
+Points-purchase reward setting
+Correction reversal
+Referral reward
+Referral reversal
+Re-award after correction
+Admin adjustment
+Concurrent redemption
+Non-negative balance
 
 ======================================================================
-156. REQUIRED CONFIRMATION TESTS
-======================================================================
-
-Test:
-- normal edit
-- unauthorized field edit
-- quantity change via normal confirmation rejected
-- amendment flow
-- 3 failed calls
-- no automatic cancellation
-- attempt audit
-- post-shipment edit lock
-
-======================================================================
-157. REQUIRED EXCEL TESTS
-======================================================================
+158. REQUIRED REFERRAL TESTS
+============================
 
 Test:
-- valid import
-- invalid workbook
-- missing columns
-- protected field
-- duplicate file
-- duplicate row
-- same row fingerprint
-- intentionally changed row
-- formula injection
-- unauthorized Admin
-- mixed rows
-- transaction failure
-- retry
+
+Valid code
+Invalid code
+Self referral
+No code
+Late assignment attempt
+One referee / one referrer
+First delivered reward
+Second delivered order no duplicate reward
+Delivered → refused reversal
+Refused → delivered re-award
+Duplicate processing
+Concurrent processing
 
 ======================================================================
-158. REQUIRED REPORT TESTS
+159. REQUIRED INVENTORY TESTS
+=============================
+
+Test:
+
+Final-unit race
+Insufficient stock
+Cancellation restore
+Duplicate cancellation
+Refusal no immediate restore
+Return verification restore
+Duplicate return verification
+Admin adjustment
+Order amendment inventory delta
+Concurrent checkout
+
 ======================================================================
+160. REQUIRED CONFIRMATION TESTS
+================================
+
+Test:
+
+Normal edit
+Unauthorized field edit
+Product change rejected through normal confirmation
+Quantity change rejected through normal confirmation
+Amendment flow
+Three failed calls
+No auto-cancellation
+Attempt audit
+Post-shipment edit lock
+
+======================================================================
+161. REQUIRED EXCEL TESTS
+=========================
+
+Test:
+
+Valid import
+Invalid workbook
+Missing columns
+Protected field
+Duplicate file
+Duplicate row
+Same fingerprint
+Legitimate changed row
+Formula injection
+Unauthorized Admin
+Mixed valid/invalid rows
+Transaction failure
+Retry
+Memory bounds
+
+======================================================================
+162. REQUIRED REPORT TESTS
+==========================
 
 Verify:
+
 Gross Merchandise Sales
 Gross Order Value
 Delivered Revenue
@@ -4044,88 +4528,66 @@ Refused Value
 Cancelled Value
 Outstanding COD
 
-against known fixtures.
+Verify points never inflate EGP revenue.
 
-Ensure:
-points do not inflate EGP revenue.
-
-======================================================================
-159. REQUIRED SECURITY AUDIT
-======================================================================
-
-Audit:
-Authentication
-Authorization
-IDOR
-Privilege escalation
-CSRF
-XSS
-Injection
-Mass assignment
-Upload security
-Excel security
-Replay
-Rate limiting
-Points abuse
-Referral abuse
-Inventory abuse
-Session security
-Secret leakage
+Verify date-basis semantics.
 
 ======================================================================
-160. HEALTH / OPERATIONS
-======================================================================
+163. HEALTH / OPERATIONS
+========================
 
 Provide:
+
 health
 readiness
-structured logs
+structured logging
 error tracking abstraction
 cron execution tracking
 import tracking
 storage status where appropriate
 
-Do not expose secrets.
+Never expose secrets.
 
 ======================================================================
-161. DEPLOYMENT
-======================================================================
+164. DEPLOYMENT
+===============
 
-Must support:
+Support:
+
 Vercel
 Docker
 Node
 
 Secrets via environment.
 
-No hard-coded secrets.
-
 Provide:
+
 .env.example
 
-Never commit real credentials.
+Never commit credentials.
 
 ======================================================================
-162. BACKUPS
-======================================================================
+165. BACKUPS
+============
 
-Production documentation must define:
+Documentation must define:
 
 database backups
-backup retention
+retention
 restore test procedure
 migration safety
 object storage protection
 
 Baseline:
+
 daily database backup
 30-day backup retention
 
-This is an operational requirement, not a claim that infrastructure is automatically configured.
+Infrastructure configuration must be verified separately.
 
 ======================================================================
-163. DOCUMENTATION
-======================================================================
+166. DOCUMENTATION
+==================
 
 Maintain:
 
@@ -4154,96 +4616,53 @@ docs/RETENTION.md
 docs/DECISIONS.md
 docs/CHANGELOG.md
 
-Documentation must match implementation.
-
-======================================================================
-164. REQUIREMENT TRACEABILITY
-======================================================================
-
-Every critical requirement must map:
-
-Requirement
-→ Domain
-→ Service
-→ Schema
-→ UI
-→ API/Action
-→ Tests
-→ Documentation
-
-No critical requirement may exist only in prose.
-
-======================================================================
-165. BUSINESS RULE MATRIX
-======================================================================
-
-Maintain:
-
-Rule ID
-Rule
-Authoritative Service
-DB Enforcement
-Transaction Requirement
-Idempotency Requirement
-Audit Requirement
-Test
-Status
-
-======================================================================
-166. SECURITY MATRIX
-======================================================================
-
-Maintain:
-
-Threat
-Surface
-Mitigation
-Implementation
-Test
-Residual Risk
-Status
+Documentation must match actual implementation.
 
 ======================================================================
 167. RETENTION IMPLEMENTATION
-======================================================================
+=============================
 
-Retention jobs may be scheduled for:
+Retention jobs may clean:
 
-- expired sessions
-- expired tokens
-- operational notifications
-- temporary imports
-- old operational logs
-- orphaned storage records
+* expired sessions
+* expired tokens
+* operational notifications
+* temporary imports
+* operational logs
+* orphaned storage records
+* temporary processing artifacts
 
-Never allow automated retention job to delete:
-orders
-order items
-points ledger
-inventory ledger
-referral history
-without explicit future legal/business policy.
+Never allow automated retention to delete:
+
+* orders
+* order items
+* points ledger
+* inventory ledger
+* referral history
+
+unless future explicit legal/business policy authorizes it.
 
 ======================================================================
 168. LEGAL / POLICY SAFETY
-======================================================================
+==========================
 
-Do not invent:
-- tax
-- VAT
-- coupons
-- discounts
-- chargebacks
-- bank transfer
-- card gateway
-- wallet provider
-- installment plans
+Do NOT invent:
 
-unless explicitly added later.
+* tax
+* VAT
+* coupons
+* discounts
+* chargebacks
+* bank transfer
+* card gateways
+* wallet providers
+* installment plans
+
+unless explicitly added in a future approved specification.
 
 ======================================================================
 169. CRITICAL DOMAIN INVARIANTS
-======================================================================
+===============================
 
 INVARIANT 1:
 pointsBalance >= 0
@@ -4270,7 +4689,7 @@ INVARIANT 8:
 historical order snapshots are immutable
 
 INVARIANT 9:
-payment method in Phase 1 = CASH_ON_DELIVERY
+Phase 1 payment method = CASH_ON_DELIVERY
 
 INVARIANT 10:
 points are not monetary currency
@@ -4299,24 +4718,37 @@ duplicate checkout cannot create duplicate order
 INVARIANT 18:
 audit records are append-only
 
+INVARIANT 19:
+OAuth provider identity is unique
+
+INVARIANT 20:
+Google OAuth cannot elevate role
+
+INVARIANT 21:
+unsafe OAuth account linking is prohibited
+
 ======================================================================
 170. PHASE 00 — DO NOT IMPLEMENT
-======================================================================
+================================
 
-Phase 00 must inspect:
+Phase 00 MUST inspect:
 
-- repository
-- dependencies
-- routes
-- schema
-- migrations
-- services
-- auth
-- security
-- UI
-- imports
-- storage
-- tests
+* repository
+* Git history
+* dependencies
+* routes
+* schema
+* migrations
+* services
+* authentication
+* OAuth
+* security
+* UI
+* imports
+* storage
+* tests
+* environment
+* deployment
 
 Output:
 
@@ -4332,30 +4764,74 @@ Output:
 10. Database Enforcement Matrix
 11. RBAC Matrix
 12. Security Threat Model
-13. Test Matrix
-14. Migration Plan
-15. Legacy Cleanup Plan
-16. File Tree
-17. Deployment Model
-18. Storage Model
-19. Retention Model
-20. Rate Limit Model
-21. Notification Model
-22. Reporting Definitions
-23. FINAL CONFIGURATION MATRIX
-24. Risk Register
-25. Phase 01 Plan
+13. OAuth Security Model
+14. Test Matrix
+15. Migration Plan
+16. Legacy Cleanup Plan
+17. File Tree
+18. Deployment Model
+19. Storage Model
+20. Retention Model
+21. Rate Limit Model
+22. Notification Model
+23. Reporting Definitions
+24. Final Configuration Matrix
+25. Risk Register
+26. Phase 01 Plan
 
 No schema rewrite before the audit.
 
 ======================================================================
-171. PHASE 00 — FINAL CONFIGURATION MATRIX
-======================================================================
+171. LEGACY / PROTOTYPE RECOVERY
+================================
 
-The resulting document MUST explicitly state:
+If the repository contains:
+
+* mockData
+* localStorage business logic
+* fake checkout
+* fake orders
+* fake stock
+* fake points
+* fake authentication
+* fake Admin
+* arbitrary cashback
+* wrong currency
+* prototype scripts
+* duplicate architecture
+* obsolete routes
+* obsolete services
+
+the agent MUST:
+
+1. identify them;
+2. classify them;
+3. preserve recoverability;
+4. never treat them as authoritative;
+5. map replacement plan;
+6. remove only after validated replacement exists.
+
+Never perform:
+
+git reset --hard
+
+or destructive mass deletion merely to obtain a clean repository.
+
+Never delete unknown files without first determining their purpose.
+
+======================================================================
+172. PHASE 00 FINAL CONFIGURATION MATRIX
+========================================
+
+The final configuration must explicitly state:
 
 Payment Method:
 CASH_ON_DELIVERY
+
+Funding Modes:
+CASH_ONLY
+POINTS_ONLY
+MIXED
 
 Product Points Redemption:
 FULL PRODUCT ONLY
@@ -4379,10 +4855,10 @@ Referral Trigger:
 First DELIVERED order
 
 Referral Reversal:
-YES on DELIVERED→CUSTOMER_REFUSED
+YES on DELIVERED → CUSTOMER_REFUSED
 
 Referral Re-award:
-YES on CUSTOMER_REFUSED→DELIVERED when condition becomes valid again
+YES on CUSTOMER_REFUSED → DELIVERED when valid
 
 Delivery Reward:
 per-unit configured reward
@@ -4393,7 +4869,7 @@ default FALSE
 Confirmation Editable Fields:
 contact + address only
 
-Product/Variant/Quantity Change:
+Product / Variant / Quantity Change:
 Order Amendment Flow
 
 Return Verification:
@@ -4408,8 +4884,14 @@ NONE
 Current Payment Method:
 CASH_ON_DELIVERY
 
+Authentication:
+Credentials + Google OAuth
+
 Admin Identity:
 DB User role ADMIN bootstrapped from environment
+
+OAuth Identity:
+OAuthAccount linked to internal User
 
 Audit Retention:
 24 months minimum
@@ -4426,7 +4908,7 @@ Customer Notifications:
 Admin Notifications:
 180 days
 
-Idempotency Records:
+Idempotency:
 7 days
 
 Import Metadata:
@@ -4438,210 +4920,335 @@ Raw Import Files:
 Backup Retention:
 30 days
 
-These are NOT questions.
+These are the implementation baseline.
 
-They are the implementation baseline.
+They are NOT questions.
 
 ======================================================================
-172. PHASE 01
-======================================================================
+173. PHASE 01
+=============
 
 After Phase 00 approval:
 
 Implement:
 
-- Prisma schema
-- enums
-- relations
-- indexes
-- constraints
-- migrations
-- seed/bootstrap architecture
+* Prisma schema
+* enums
+* relations
+* indexes
+* constraints
+* migrations
+* seed/bootstrap architecture
+* User
+* OAuthAccount
+* commercial domain foundation
 
 No unrelated UI feature work.
 
 ======================================================================
-173. PHASE 02
-======================================================================
+174. PHASE 02
+=============
 
 Implement:
 
-- env validation
-- DB infrastructure
-- logging
-- errors
-- rate limiting
-- security headers
-- health checks
-- Docker
-- configuration
+* env validation
+* DB infrastructure
+* logging
+* errors
+* rate limiting
+* security headers
+* health checks
+* Docker
+* configuration
+* observability foundations
 
 ======================================================================
-174. PHASE 03
-======================================================================
+175. PHASE 03
+=============
 
 Implement:
 
-- Auth.js
-- User
-- Customer registration
-- Admin bootstrap
-- Login
-- Logout
-- Sessions
-- RBAC
+* Auth.js
+* User
+* Customer registration
+* Admin bootstrap
+* Credentials login
+* Google OAuth
+* OAuth account linking
+* Logout
+* sessions
+* RBAC
 
 ======================================================================
-175. PHASE 04
-======================================================================
+176. PHASE 04
+=============
 
 Implement:
 
-- email verification
-- password reset
-- rate limiting
-- anti-enumeration
+* email verification
+* password reset
+* rate limiting
+* anti-enumeration
 
 ======================================================================
-176. PHASE 05
-======================================================================
+177. PHASE 05
+=============
 
 Implement:
 
-- storefront
-- catalog
-- categories
-- search
-- filters
-- product details
-- variants
-- media
-- points catalog
-- i18n
+* storefront
+* catalog
+* categories
+* search
+* filters
+* product details
+* variants
+* media
+* points catalog
+* i18n
+* responsive design
+* SEO
 
 ======================================================================
-177. PHASE 06
-======================================================================
-
-Implement:
-- cart
-- persistence
-- variant selection
-- stock validation
-- optional guest merge
-
-======================================================================
-178. PHASE 07
-======================================================================
+178. PHASE 06
+=============
 
 Implement:
 
-- checkout
-- COD
-- cash/points/mixed funding
-- free shipping
-- snapshots
-- points
-- inventory
-- order creation
-- idempotency
+* cart
+* persistence
+* variant selection
+* stock validation
+* purchaseMode
+* optional guest merge
 
 ======================================================================
-179. PHASE 08
-======================================================================
+179. PHASE 07
+=============
 
 Implement:
 
-- points ledger
-- delivery reward
-- referral
-- referral reversal
-- refunds
-- concurrency controls
+* checkout
+* COD
+* CASH_ONLY
+* POINTS_ONLY
+* MIXED
+* free shipping
+* authoritative totals
+* historical snapshots
+* points redemption
+* inventory
+* order creation
+* idempotency
+* transaction integrity
+* concurrency protection
 
 ======================================================================
-180. PHASE 09
+180. PHASE 08
+=============
+
+Implement:
+
+* points ledger
+* delivery reward
+* referral reward
+* referral reversal
+* referral re-award
+* refunds
+* concurrency controls
+
 ======================================================================
+181. PHASE 09
+=============
 
 Payment abstraction only.
 
 No electronic provider.
 
-======================================================================
-181. PHASE 10
-======================================================================
-
-Customer account.
+No fake payment settlement.
 
 ======================================================================
-182. PHASE 11
-======================================================================
+182. PHASE 10
+=============
 
-Admin dashboard.
+Customer account:
 
-======================================================================
-183. PHASE 12
-======================================================================
-
-Confirmation.
-
-======================================================================
-184. PHASE 13
-======================================================================
-
-Order Excel.
+* profile
+* orders
+* points
+* history
+* referrals
+* addresses
+* settings
 
 ======================================================================
-185. PHASE 14
-======================================================================
+183. PHASE 11
+=============
 
-Delivery Excel + return verification.
+Admin dashboard:
 
-======================================================================
-186. PHASE 15
-======================================================================
-
-Manual WhatsApp abstraction.
-
-======================================================================
-187. PHASE 16
-======================================================================
-
-Security hardening.
-
-======================================================================
-188. PHASE 17
-======================================================================
-
-Complete test suite.
+* dashboard
+* orders
+* customers
+* catalog
+* categories
+* variants
+* media
+* inventory
+* points
+* referrals
+* settings
+* reports
+* notifications
+* audit
 
 ======================================================================
-189. PHASE 18
-======================================================================
+184. PHASE 12
+=============
 
-Performance audit.
+Implement:
+
+* Order Confirmation
+* Phone Confirmation
+* Manual WhatsApp
+* Confirmation Attempts
+* Confirmation edits
+* Order Amendment Flow
 
 ======================================================================
-190. PHASE 19
-======================================================================
+185. PHASE 13
+=============
 
-Production audit.
+Implement:
+
+* Order Excel Export
+* Order Excel Import
+* preview
+* validation
+* protected field policy
+* deduplication
+* transactional apply
+* audit
 
 ======================================================================
-191. PHASE GATE
+186. PHASE 14
+=============
+
+Implement:
+
+* Delivery Excel Import
+* Delivery processing
+* DELIVERED
+* CUSTOMER_REFUSED
+* return workflow
+* warehouse received
+* warehouse return verification
+* inventory restoration
+
 ======================================================================
+187. PHASE 15
+=============
+
+Implement:
+
+IWhatsAppConfirmationProvider
+
+Current:
+
+ManualWhatsAppConfirmationProvider
+
+No automated WhatsApp API.
+
+======================================================================
+188. PHASE 16
+=============
+
+Security hardening:
+
+* authentication audit
+* authorization audit
+* Google OAuth audit
+* account-linking audit
+* IDOR
+* privilege escalation
+* CSRF
+* XSS
+* injection
+* upload security
+* Excel security
+* replay protection
+* rate limiting
+* secret handling
+* session security
+
+======================================================================
+189. PHASE 17
+=============
+
+Complete test suite:
+
+Vitest
+Playwright
+unit tests
+service tests
+database tests
+integration tests
+transaction tests
+concurrency tests
+security tests
+regression tests
+
+======================================================================
+190. PHASE 18
+=============
+
+Performance audit:
+
+* database queries
+* indexes
+* N+1
+* rendering
+* client JavaScript
+* image delivery
+* Excel processing
+* caching
+* API latency
+
+No unsupported performance claims.
+
+======================================================================
+191. PHASE 19
+=============
+
+Production audit:
+
+* architecture
+* security
+* business rules
+* data integrity
+* observability
+* deployment
+* backups
+* recovery
+* retention
+* documentation
+* operational readiness
+
+======================================================================
+192. PHASE GATE
+===============
 
 A phase is COMPLETE only when:
 
-- implementation exists
-- requirements are traceable
-- tests exist
-- tests pass
-- security reviewed
-- data integrity reviewed
-- documentation updated
-- known issues documented
-- Gate = PASS
+* implementation exists
+* requirements are traceable
+* tests exist
+* tests pass
+* security reviewed
+* data integrity reviewed
+* documentation updated
+* known issues documented
+* phase gate = PASS
 
 At each gate output:
 
@@ -4662,23 +5269,33 @@ KNOWN ISSUES
 REMAINING WORK
 GATE
 
+Never report completion because:
+
+* code compiles
+* UI renders
+* endpoint returns 200
+* one happy path passes
+* build succeeds
+
 ======================================================================
-192. DEFINITION OF DONE
-======================================================================
+193. DEFINITION OF DONE
+=======================
 
 A feature is NOT DONE because:
 
-- UI exists
-- endpoint returns 200
-- code compiles
-- database row exists
-- happy path works
+* UI exists
+* endpoint exists
+* build passes
+* database row exists
+* happy path works
 
 A feature is DONE only when:
 
 UI
 +
 Validation
++
+Authentication
 +
 Authorization
 +
@@ -4692,7 +5309,7 @@ Idempotency where required
 +
 Audit where required
 +
-Error handling
+Error Handling
 +
 Tests
 +
@@ -4701,20 +5318,28 @@ Documentation
 are aligned.
 
 ======================================================================
-193. ABSOLUTE PROHIBITIONS
-======================================================================
+194. ABSOLUTE PROHIBITIONS
+==========================
 
 NEVER:
 
 trust client price
+
 trust client points
+
 trust client stock
+
 trust client role
+
 trust client total
+
+trust client permissions
 
 allow product partial points redemption
 
-restore stock immediately on customer refusal
+allow partial free shipping
+
+restore inventory immediately on customer refusal
 
 award referral twice
 
@@ -4748,44 +5373,687 @@ silently invent business rules
 
 silently modify approved business rules
 
-mark a phase complete without verification
+silently introduce cashback
+
+silently introduce SAR or another currency
+
+silently introduce tax/VAT/coupon/discount systems
+
+silently introduce card payment
+
+silently introduce wallet payment
+
+silently introduce bank transfer
+
+silently introduce installments
+
+silently merge OAuth accounts
+
+trust a Google email without applying the approved account-linking policy
+
+allow Google authentication to elevate privileges
+
+allow frontend-only business authority
+
+replace the architecture merely to simplify implementation
+
+rewrite working code without traceability
+
+perform destructive migration without recovery plan
+
+delete existing functionality to make tests pass
+
+disable tests to make the build green
+
+skip security checks because the feature "works"
+
+mark a phase complete without validation
 
 ======================================================================
-194. FINAL ENGINEERING STANDARD
-======================================================================
+195. FINAL ENGINEERING STANDARD
+===============================
 
-The system must work correctly under:
+The system must remain correct under:
 
-financial conditions
-operational conditions
-security conditions
-concurrent conditions
-human error
-network retries
-duplicate requests
-stale state
-malformed files
-historical data mutation
-status corrections
-partial external failures
+* real financial conditions
+* operational conditions
+* security attacks
+* concurrency
+* human error
+* network retries
+* duplicate requests
+* stale state
+* malformed files
+* historical mutations
+* status corrections
+* partial external failures
+* OAuth retries
+* provider failures
+* session expiry
+* race conditions
+* repeated imports
+* repeated delivery updates
+* repeated refunds
+* repeated inventory operations
 
 Optimize for:
 
-"CORRECT UNDER REAL-WORLD CONDITIONS"
+CORRECT UNDER REAL-WORLD CONDITIONS
+
+NOT:
+
+LOOKS FINISHED
+
+======================================================================
+196. PHASE EXECUTION PROTOCOL
+=============================
+
+READ THIS ENTIRE SPECIFICATION BEFORE ANY IMPLEMENTATION.
+
+PHASE 00 MUST BE AUDIT ONLY.
+
+Do not code during Phase 00 unless required for non-destructive inspection tooling.
+
+Every phase must have:
+
+1. objective
+2. requirements
+3. implementation plan
+4. dependency map
+5. risk analysis
+6. implementation
+7. tests
+8. security review
+9. data integrity review
+10. documentation update
+11. validation gate
+
+Do not skip phases merely because the agent believes the work is simple.
+
+Do not combine unrelated phases without explicit justification.
+
+======================================================================
+197. REPOSITORY SAFETY PROTOCOL
+===============================
+
+Before modifying an existing repository:
+
+1. inspect Git status
+2. inspect Git history
+3. inspect current branch
+4. identify last known-good state
+5. inspect recent changes
+6. identify prototype/legacy artifacts
+7. preserve recoverability
+
+Never automatically execute:
+
+git reset --hard
+
+Never automatically delete:
+
+* unknown files
+* migrations
+* tests
+* domain services
+* repository interfaces
+* documentation
+* configuration
+
+When replacing legacy implementation:
+
+OLD
+→
+MIGRATION
+→
+NEW
+→
+TEST
+→
+VERIFY
+→
+REMOVE OLD
 
 not:
 
-"LOOKS FINISHED"
+DELETE
+→
+GUESS
+→
+REBUILD
 
 ======================================================================
-195. FINAL EXECUTION COMMAND
+198. CURRENT REPOSITORY RECOVERY PROTOCOL
+=========================================
+
+If the current repository contains a prototype that conflicts with this specification:
+
+Treat the specification as authoritative.
+
+Prototype artifacts may include:
+
+* mockData
+* hardcoded products
+* localStorage cart
+* client-generated order numbers
+* fake points
+* fake referral bonuses
+* cashback
+* SAR currency
+* fake Admin flags
+* fake API responses
+* fake payment systems
+* fake inventory
+* visual-only tracking
+* static charts
+* generated prototype scripts
+
+These MUST be classified as:
+
+LEGACY / PROTOTYPE
+
+unless proven otherwise.
+
+Do not infer production business rules from them.
+
 ======================================================================
+199. CONFIGURATION BASELINE
+===========================
+
+The Phase 00 output MUST explicitly state:
+
+Payment Method:
+CASH_ON_DELIVERY
+
+Funding Modes:
+
+CASH_ONLY
+POINTS_ONLY
+MIXED
+
+Product Points Redemption:
+
+FULL ONLY
+
+Partial Product Points + Cash:
+
+FORBIDDEN
+
+Free Shipping:
+
+FULL ONLY
+
+Global Shipping:
+
+70 EGP
+
+Free Shipping Threshold:
+
+200 Points
+
+Expected Delivery:
+
+2–3 Days
+
+Referral Reward:
+
+50 Points
+
+Referral Trigger:
+
+First DELIVERED order
+
+Referral Reversal:
+
+YES
+
+Referral Re-award:
+
+YES when qualification becomes valid again
+
+Delivery Reward:
+
+per-unit configured value
+
+Points Purchase Delivery Reward:
+
+FALSE by default
+
+Confirmation Editable Fields:
+
+Contact + Address only
+
+Product / Variant / Quantity Changes:
+
+Order Amendment Flow
+
+Return Verification:
+
+ADMIN ONLY
+
+Email Verification:
+
+required before checkout
+
+Payment Gateway:
+
+NONE
+
+Payment Method:
+
+CASH_ON_DELIVERY
+
+Authentication:
+
+Credentials + Google OAuth
+
+Admin:
+
+DB User with ADMIN role
+
+OAuth Identity:
+
+OAuthAccount linked to User
+
+Audit Retention:
+
+24 months minimum
+
+Commercial History:
+
+indefinite
+
+Operational Logs:
+
+90 days
+
+Customer Notifications:
+
+90 days
+
+Admin Notifications:
+
+180 days
+
+Idempotency:
+
+7 days
+
+Import Metadata:
+
+24 months
+
+Raw Import Files:
+
+90 days
+
+Backup Retention:
+
+30 days
+
+======================================================================
+200. MASTER CONTRACT ENFORCEMENT
+================================
+
+Every AI coding agent, human developer, code-generation model,
+or external system working on VEN+ MUST obey this contract.
+
+Before making changes, the agent must determine:
+
+* which phase is active
+* which requirements are being implemented
+* which files are authoritative
+* which business rules are involved
+* which tests cover the change
+* whether transaction semantics are affected
+* whether audit is required
+* whether idempotency is required
+* whether security boundaries are affected
+
+The agent must NOT infer that:
+
+"working code" = "correct code"
+
+The agent must verify compliance with this specification.
+
+======================================================================
+201. NO ARCHITECTURAL DRIFT
+===========================
+
+The agent MUST NOT:
+
+* redesign the architecture for convenience
+* replace the domain layer with UI logic
+* introduce a second repository pattern
+* introduce duplicate services
+* introduce duplicate authentication
+* introduce duplicate checkout
+* create a parallel API
+* create fake business infrastructure
+* bypass the database because it is easier
+* use mock data as production authority
+* use localStorage as business authority
+* implement core rules inside React
+* invent a second source of truth
+
+Any architectural deviation requires:
+
+* documented reason
+* impact analysis
+* security assessment
+* migration plan
+* tests
+* explicit phase approval
+
+======================================================================
+202. NO BUSINESS-RULE DRIFT
+===========================
+
+The agent MUST NOT invent:
+
+* percentages
+* cashback formulas
+* conversion rates
+* taxes
+* discounts
+* coupon systems
+* hidden rewards
+* payment providers
+* shipping tiers
+* governorate pricing
+* automatic cancellations
+* automatic warehouse restoration
+* automatic referral qualification
+* alternative points semantics
+
+unless explicitly added to a future approved specification.
+
+======================================================================
+203. TRANSACTIONAL STANDARD
+===========================
+
+Any business operation that changes multiple authoritative resources
+MUST define its transaction boundary.
+
+Examples:
+
+Checkout:
+Order + OrderItems + Stock + Points + Idempotency + Cart
+
+Cancellation:
+Order + Stock + Points + Audit
+
+Delivery:
+Order + Points + Referral + Notifications + Audit
+
+Return Verification:
+Order/Return + Inventory + Audit
+
+Admin Points Adjustment:
+PointsBalance + PointsTransaction + Audit
+
+Order Amendment:
+Order + OrderItems + Stock + Points + Audit
+
+If atomicity is impossible because of an external provider:
+
+the system must use:
+
+* outbox/event strategy
+* compensating transaction
+* retry policy
+* idempotency
+* audit
+* failure state
+
+Do not pretend distributed operations are atomic when they are not.
+
+======================================================================
+204. IDEMPOTENCY STANDARD
+=========================
+
+Idempotency is mandatory for critical repeatable operations.
+
+At minimum:
+
+* checkout
+* cancellation
+* refunds
+* delivery imports
+* order imports
+* return verification
+* delivery status processing
+* referral reward processing
+* points reward processing
+* inventory restoration
+* Admin adjustments where necessary
+
+Repeated requests MUST NOT create duplicate business effects.
+
+======================================================================
+205. HISTORICAL DATA STANDARD
+=============================
+
+Historical commercial data must remain reconstructable.
+
+Orders must snapshot:
+
+* customer information
+* contact information
+* address
+* product name
+* variant information
+* SKU
+* prices
+* points price
+* delivery reward
+* shipping
+* delivery estimate
+* purchase mode
+
+Changes to current catalog/account/settings MUST NOT rewrite historical facts.
+
+======================================================================
+206. LEDGER STANDARD
+====================
+
+Points and inventory are ledger-backed domains.
+
+Ledger records are:
+
+* append-only
+* traceable
+* idempotent where required
+* linked to the responsible business operation
+* auditable
+
+Do not mutate ledger history to "fix" mistakes.
+
+Use:
+
+reversal
++
+correction
++
+new transaction
+
+======================================================================
+207. ORDER STATE CORRECTION STANDARD
+====================================
+
+Status corrections must:
+
+* validate legal transition
+* require authorization
+* capture reason
+* capture actor
+* create audit
+* apply corresponding points effects
+* apply corresponding inventory effects
+* preserve previous history
+* be idempotent
+
+======================================================================
+208. OAUTH IDENTITY STANDARD
+============================
+
+External OAuth identity is never equivalent to internal authorization.
+
+Google proves identity.
+
+The internal User record determines:
+
+* role
+* permissions
+* account state
+* points
+* referrals
+* ownership
+
+Google must never directly assign:
+
+ADMIN
+
+======================================================================
+209. TESTING GATE
+=================
+
+Every phase must run the repository's canonical validation commands.
+
+At minimum, when applicable:
+
+npm run lint
+
+npx vitest run
+
+npm run build
+
+And for browser functionality:
+
+npx playwright test
+
+A green build does NOT prove business correctness.
+
+All required tests must pass.
+
+No tests may be:
+
+* deleted
+* skipped
+* disabled
+* weakened
+* rewritten merely to pass
+
+without documented justification.
+
+======================================================================
+210. TEST COVERAGE PHILOSOPHY
+=============================
+
+Test:
+
+Happy path
+Failure path
+Boundary conditions
+Concurrency
+Retries
+Duplicate requests
+Stale state
+Unauthorized access
+Malformed inputs
+Database constraints
+Transaction rollback
+Historical integrity
+Security invariants
+
+Tests must prove behavior,
+not merely execute lines of code.
+
+======================================================================
+211. DOCUMENTATION STANDARD
+===========================
+
+Every completed phase must update:
+
+* architecture documentation
+* business rules documentation
+* database documentation
+* security documentation where relevant
+* testing documentation
+* decisions/changelog
+* requirement traceability
+
+Documentation must reflect reality.
+
+Never document features that are not implemented.
+
+Never leave removed behavior documented as active.
+
+======================================================================
+212. PHASE COMPLETION REPORT
+============================
+
+At the end of every phase output:
+
+PHASE
+STATUS
+OBJECTIVE
+IMPLEMENTED
+FILES CREATED
+FILES MODIFIED
+FILES REMOVED
+DATABASE CHANGES
+API CHANGES
+BUSINESS RULES
+SECURITY
+TRANSACTIONS
+IDEMPOTENCY
+AUDIT
+TESTS
+TEST RESULTS
+BUILD RESULTS
+PERFORMANCE
+DOCUMENTATION
+KNOWN ISSUES
+RESIDUAL RISK
+REMAINING WORK
+NEXT PHASE
+GATE
+
+======================================================================
+213. FINAL ABSOLUTE RULE
+========================
+
+IF A REQUIREMENT IS UNCLEAR:
+
+DO NOT GUESS.
+
+Inspect:
+
+* this specification
+* existing domain model
+* existing schema
+* existing tests
+* existing documentation
+* approved decisions
+
+If ambiguity remains:
+
+identify the conflict explicitly.
+
+Do not silently choose a business rule.
+
+======================================================================
+214. FINAL EXECUTION COMMAND
+============================
 
 READ THIS ENTIRE SPECIFICATION.
 
 AUDIT THE REPOSITORY.
 
 RECONCILE THE CURRENT IMPLEMENTATION.
+
+PRESERVE RECOVERABILITY.
 
 DO NOT INVENT ALTERNATIVE BUSINESS RULES.
 
@@ -4794,6 +6062,8 @@ DO NOT LEAVE CRITICAL BUSINESS SEMANTICS AMBIGUOUS.
 DO NOT HIDE BUSINESS DECISIONS INSIDE UI CODE.
 
 CENTRALIZE BUSINESS LOGIC.
+
+USE ONE AUTHORITATIVE DOMAIN IMPLEMENTATION.
 
 MAKE TRANSACTIONAL OPERATIONS ATOMIC.
 
@@ -4813,10 +6083,28 @@ MAKE REFERRAL REWARDS EXACTLY-ONCE.
 
 MAKE STATUS CORRECTIONS FULLY AUDITABLE.
 
+MAKE GOOGLE OAUTH SAFELY INTEGRATED WITH INTERNAL USER IDENTITY.
+
+MAKE ACCOUNT LINKING EXPLICIT, SECURE, AND AUDITABLE.
+
+DO NOT IMPLEMENT A NEW PAYMENT GATEWAY.
+
+DO NOT IMPLEMENT CASHBACK.
+
+DO NOT IMPLEMENT PARTIAL POINTS REDEMPTION.
+
+DO NOT IMPLEMENT PARTIAL FREE SHIPPING.
+
+DO NOT INVENT TAX/VAT/COUPONS/DISCOUNTS.
+
+DO NOT TRUST THE CLIENT FOR BUSINESS AUTHORITY.
+
+DO NOT MARK A PHASE COMPLETE WITHOUT VERIFICATION.
+
 IMPLEMENT.
 TEST.
 VERIFY.
 DOCUMENT.
 AUDIT AGAIN.
 
-END OF MASTER SPECIFICATION.
+END OF MASTER SYSTEM SPECIFICATION.

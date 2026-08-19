@@ -156,7 +156,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             <div>
               <p className="text-xs text-slate-400 mb-1">نقاط الولاء المصروفة</p>
               <h3 className="text-2xl font-black text-yellow-400 font-mono">
-                {(stats.pointsSpent / 1000).toFixed(1)}k
+                {((stats.pointsSpent || 0) / 1000).toFixed(1)}k
               </h3>
             </div>
             <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center">
@@ -164,7 +164,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </div>
           </div>
           <div className="text-[11px] text-yellow-500/90 font-mono">
-            من أصل {(stats.pointsIssued / 1000).toFixed(0)}k نقطة تم إصدارها
+            من أصل {((stats.pointsIssued || 0) / 1000).toFixed(0)}k نقطة تم إصدارها
           </div>
         </div>
       </div>
@@ -201,8 +201,8 @@ export const AdminView: React.FC<AdminViewProps> = ({
         <div className="lg:col-span-4 glass-card p-6">
           <h3 className="text-base font-bold text-white mb-6">المنتجات الأكثر مبيعاً</h3>
           <div className="space-y-5">
-            {stats.topProducts.map((p, idx) => {
-              const maxSold = stats.topProducts[0].sold;
+            {(stats.topProducts || []).map((p, idx) => {
+              const maxSold = (stats.topProducts && stats.topProducts[0]?.sold) || 1;
               const width = Math.max(20, Math.round((p.sold / maxSold) * 100));
               return (
                 <div key={p.id}>
@@ -244,18 +244,20 @@ export const AdminView: React.FC<AdminViewProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-800/60">
               {orders.map((order) => {
-                const statusColors = {
+                const statusColors: Record<string, string> = {
                   Pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
                   Processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
                   Shipped: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
                   Delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                  Cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
                 };
 
-                const statusArabic = {
+                const statusArabic: Record<string, string> = {
                   Pending: 'تم الاستلام',
                   Processing: 'قيد التجهيز',
                   Shipped: 'تم الشحن',
                   Delivered: 'تم التسليم',
+                  Cancelled: 'ملغي',
                 };
 
                 return (

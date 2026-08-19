@@ -58,10 +58,10 @@ export function toUserDTO(user: User): UserDTO {
     referralCode: user.referralCode,
     referredById: user.referredById,
     pointsBalance: user.pointsBalance,
-    emailVerified: user.emailVerifiedAt !== null,
-    emailVerifiedAt: user.emailVerifiedAt ? user.emailVerifiedAt.toISOString() : null,
+    emailVerified: user.emailVerifiedAt !== null && user.emailVerifiedAt !== undefined,
+    emailVerifiedAt: user.emailVerifiedAt ? new Date(user.emailVerifiedAt).toISOString() : null,
     isActive: user.isActive,
-    createdAt: user.createdAt.toISOString(),
-    updatedAt: user.updatedAt.toISOString(),
+    createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
+    updatedAt: user.updatedAt ? new Date(user.updatedAt).toISOString() : new Date().toISOString(),
   };
 }

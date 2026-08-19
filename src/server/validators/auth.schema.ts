@@ -24,8 +24,8 @@ export const RegisterSchema = z
       .string()
       .optional()
       .nullable()
-      .transform((val) => (val ? normalizeEgyptianPhone(val) : null))
-      .refine((val) => val === null || isValidEgyptianPhone(val), {
+      .transform((val: string | null | undefined) => (val ? normalizeEgyptianPhone(val) : null))
+      .refine((val: string | null) => val === null || isValidEgyptianPhone(val), {
         message: "Invalid Egyptian mobile number (must be 11 digits starting with 010, 011, 012, or 015)",
       }),
     referralCode: z
@@ -35,11 +35,11 @@ export const RegisterSchema = z
       .max(30)
       .optional()
       .nullable()
-      .transform((val) => (val && val.length > 0 ? val : null)),
+      .transform((val: string | null | undefined) => (val && val.length > 0 ? val : null)),
   })
   .strict();
 
-export type RegisterInput = z.infer<typeof RegisterSchema>;
+export type RegisterInput = z.input<typeof RegisterSchema>;
 
 export const LoginSchema = z
   .object({
@@ -55,7 +55,7 @@ export const LoginSchema = z
   })
   .strict();
 
-export type LoginInput = z.infer<typeof LoginSchema>;
+export type LoginInput = z.input<typeof LoginSchema>;
 
 export const GoogleOAuthSchema = z
   .object({
@@ -66,11 +66,11 @@ export const GoogleOAuthSchema = z
       .toUpperCase()
       .optional()
       .nullable()
-      .transform((val) => (val && val.length > 0 ? val : null)),
+      .transform((val: string | null | undefined) => (val && val.length > 0 ? val : null)),
   })
   .strict();
 
-export type GoogleOAuthInput = z.infer<typeof GoogleOAuthSchema>;
+export type GoogleOAuthInput = z.input<typeof GoogleOAuthSchema>;
 
 export const ForgotPasswordSchema = z
   .object({

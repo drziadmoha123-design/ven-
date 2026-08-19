@@ -9,6 +9,10 @@ export function formatEGP(amount: number): string {
   return `${amount.toLocaleString('ar-EG')} ج.م`;
 }
 
+export function formatMoney(amount: number): string {
+  return `${amount.toLocaleString()} ج.م`;
+}
+
 export function formatPoints(points: number): string {
   return `${points.toLocaleString('ar-EG')} نقطة`;
 }

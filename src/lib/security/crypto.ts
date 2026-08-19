@@ -1,7 +1,7 @@
 import * as argon2 from "argon2";
 import crypto from "crypto";
 
-export const ARGON2_CONFIG: argon2.Options = {
+export const ARGON2_CONFIG: argon2.HashOptions = {
   type: argon2.argon2id,
   memoryCost: 65536, // 64 MB
   timeCost: 3,       // 3 iterations

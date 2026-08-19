@@ -35,7 +35,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         const matchesSearch =
           !searchQuery ||
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.desc || p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.category.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesPoints = !pointsOnly || p.pointsPrice <= 40000;
         return matchesCategory && matchesPrice && matchesSearch && matchesPoints;

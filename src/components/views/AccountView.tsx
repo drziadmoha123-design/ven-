@@ -25,7 +25,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
       <div className="glass-card p-6 md:p-8 mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-purple-600/20">
-            {user.name.split(' ').map((n) => n[0]).join('')}
+            {user.name.split(' ').map((n: string) => n[0]).join('')}
           </div>
           <div>
             <h1 className="text-2xl font-black text-white">{user.name}</h1>
@@ -77,18 +77,20 @@ export const AccountView: React.FC<AccountViewProps> = ({
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => {
-                  const statusColors = {
+                  const statusColors: Record<string, string> = {
                     Pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
                     Processing: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
                     Shipped: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
                     Delivered: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                    Cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
                   };
 
-                  const statusArabic = {
+                  const statusArabic: Record<string, string> = {
                     Pending: 'تم الاستلام',
                     Processing: 'قيد التجهيز',
                     Shipped: 'تم الشحن',
                     Delivered: 'تم التسليم',
+                    Cancelled: 'ملغي',
                   };
 
                   return (

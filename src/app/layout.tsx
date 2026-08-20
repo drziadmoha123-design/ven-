@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Ven+ | Production Commerce & Loyalty Platform',
-  description: 'Production-grade commerce, loyalty points, and referral platform.',
+  title: 'Ven+ | Production Commerce Platform',
+  description: 'Production-grade e-commerce platform with Cash on Delivery and localized storefront.',
 };
 
 export default function RootLayout({

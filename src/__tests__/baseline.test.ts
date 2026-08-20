@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatEGP, formatPoints } from '../lib/utils';
+import { formatEGP, formatMoney } from '../lib/utils';
 
 describe('Phase 00.5 — Workspace & Environment Baseline', () => {
   it('formats Egyptian Pound currency correctly (EGP / ج.م)', () => {
@@ -7,9 +7,9 @@ describe('Phase 00.5 — Workspace & Environment Baseline', () => {
     expect(formatted).toContain('ج.م');
   });
 
-  it('formats Points correctly', () => {
-    const formatted = formatPoints(500);
-    expect(formatted).toContain('نقطة');
+  it('formats money correctly', () => {
+    const formatted = formatMoney(1500);
+    expect(formatted).toContain('ج.م');
   });
 
   it('verifies Node runtime environment', () => {

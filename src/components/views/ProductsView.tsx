@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Product } from '../../types';
-import { formatMoney, formatPoints } from '../../lib/utils';
+import { formatMoney } from '../../lib/utils';
 import { Filter, Star, ShoppingCart, Heart, RotateCcw } from 'lucide-react';
 
 interface ProductsViewProps {
@@ -18,7 +18,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [maxPrice, setMaxPrice] = useState<number>(10000);
-  const [pointsOnly, setPointsOnly] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<'newest' | 'price-asc' | 'price-desc' | 'rating'>('newest');
 
   const categories = useMemo(() => {
@@ -37,8 +36,7 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.desc || p.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.category.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesPoints = !pointsOnly || p.pointsPrice <= 40000;
-        return matchesCategory && matchesPrice && matchesSearch && matchesPoints;
+        return matchesCategory && matchesPrice && matchesSearch;
       })
       .sort((a, b) => {
         if (sortBy === 'price-asc') return a.price - b.price;
@@ -46,12 +44,11 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
         if (sortBy === 'rating') return b.rating - a.rating;
         return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
       });
-  }, [products, selectedCategory, maxPrice, searchQuery, pointsOnly, sortBy]);
+  }, [products, selectedCategory, maxPrice, searchQuery, sortBy]);
 
   const resetFilters = () => {
     setSelectedCategory('all');
     setMaxPrice(10000);
-    setPointsOnly(false);
     setSortBy('newest');
   };
 
@@ -116,22 +113,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
                   className="w-full accent-purple-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer"
                 />
-              </div>
-
-              {/* Points Filter */}
-              <div className="border-t border-slate-800 pt-6">
-                <label className="flex items-center justify-between cursor-pointer group bg-slate-900/60 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-xs text-white font-medium">مناسب لرصيد نقاطك</span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={pointsOnly}
-                    onChange={(e) => setPointsOnly(e.target.checked)}
-                    className="w-4 h-4 accent-purple-600 rounded"
-                  />
-                </label>
               </div>
             </div>
           </div>
@@ -227,10 +208,6 @@ export const ProductsView: React.FC<ProductsViewProps> = ({
                           {p.oldPrice && (
                             <span className="text-xs text-slate-500 line-through mb-0.5">{formatMoney(p.oldPrice)}</span>
                           )}
-                        </div>
-                        <div className="text-[11px] text-yellow-400 mt-1 flex items-center gap-1 font-medium font-mono">
-                          <Star className="w-3 h-3 fill-yellow-400" />
-                          <span>{formatPoints(p.pointsPrice)}</span>
                         </div>
                       </div>
 

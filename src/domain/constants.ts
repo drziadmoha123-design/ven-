@@ -10,24 +10,9 @@ export const DOMAIN_DEFAULTS = {
   GLOBAL_SHIPPING_PRICE: 70,
 
   /**
-   * Section 34 & 84: Points threshold required for full free shipping redemption
-   */
-  FREE_SHIPPING_POINTS_THRESHOLD: 200,
-
-  /**
    * Section 36 & 84: Expected delivery duration label
    */
   EXPECTED_DELIVERY_DURATION: "2–3 Days",
-
-  /**
-   * Section 26 & 84: Whether points-purchased product lines earn delivery reward points
-   */
-  AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION: false,
-
-  /**
-   * Section 23 & 84: Reward points credited to referrer upon referee's first delivered order
-   */
-  REFERRAL_REWARD_POINTS: 50,
 
   /**
    * Section 84: Stock threshold that triggers a low stock operational notification
@@ -37,10 +22,7 @@ export const DOMAIN_DEFAULTS = {
 
 export const SYSTEM_SETTING_KEYS = {
   GLOBAL_SHIPPING_PRICE: "GLOBAL_SHIPPING_PRICE",
-  FREE_SHIPPING_POINTS_THRESHOLD: "FREE_SHIPPING_POINTS_THRESHOLD",
   EXPECTED_DELIVERY_DURATION: "EXPECTED_DELIVERY_DURATION",
-  AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION: "AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION",
-  REFERRAL_REWARD_POINTS: "REFERRAL_REWARD_POINTS",
   LOW_STOCK_THRESHOLD: "LOW_STOCK_THRESHOLD",
 } as const;
 

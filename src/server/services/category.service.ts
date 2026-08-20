@@ -1,10 +1,12 @@
-import { prisma } from "../../lib/prisma";
+import { prisma as defaultPrisma } from "../../lib/prisma";
 import { NotFoundError, ConflictError, ValidationError } from "../../domain/errors";
 import { CategoryDTO, toCategoryDTO } from "../../domain/types/catalog";
 import { CreateCategoryInput, UpdateCategoryInput } from "../validators/catalog.schema";
 import { AuditAction, UserRole } from "@prisma/client";
 
 export class CategoryService {
+  constructor(private prisma: any = defaultPrisma) {}
+
   /**
    * Generates a URL-safe lowercase slug from string
    */
@@ -20,12 +22,12 @@ export class CategoryService {
   /**
    * Ensures slug uniqueness by appending suffix if needed
    */
-  private async ensureUniqueSlug(baseSlug: string, currentId?: string): Promise<string> {
+  private async ensureUniqueSlug(baseSlug: string, currentId?: string, client: any = this.prisma): Promise<string> {
     let slug = baseSlug;
     let counter = 1;
 
     while (true) {
-      const existing = await prisma.category.findUnique({
+      const existing = await client.category.findUnique({
         where: { slug },
       });
 
@@ -42,8 +44,11 @@ export class CategoryService {
    * Retrieves active categories tree or flat list with product counts
    */
   async getCategories(includeInactive = false): Promise<CategoryDTO[]> {
-    const categories = await prisma.category.findMany({
-      where: includeInactive ? undefined : { isActive: true },
+    const categories = await this.prisma.category.findMany({
+      where: {
+        parentId: null,
+        ...(includeInactive ? {} : { isActive: true }),
+      },
       include: {
         _count: {
           select: {
@@ -68,17 +73,14 @@ export class CategoryService {
       orderBy: { name: "asc" },
     });
 
-    // Return root categories with nested children
-    return categories
-      .filter((cat) => !cat.parentId)
-      .map((cat) => toCategoryDTO(cat));
+    return categories.map((cat: any) => toCategoryDTO(cat));
   }
 
   /**
-   * Retrieves all categories flat (useful for dropdowns/admin)
+   * Retrieves all categories as flat list
    */
   async getAllFlatCategories(includeInactive = false): Promise<CategoryDTO[]> {
-    const categories = await prisma.category.findMany({
+    const categories = await this.prisma.category.findMany({
       where: includeInactive ? undefined : { isActive: true },
       include: {
         _count: {
@@ -92,14 +94,14 @@ export class CategoryService {
       orderBy: { name: "asc" },
     });
 
-    return categories.map((cat) => toCategoryDTO(cat));
+    return categories.map((cat: any) => toCategoryDTO(cat));
   }
 
   /**
-   * Retrieves a category by ID
+   * Retrieves single category by ID
    */
   async getCategoryById(id: string): Promise<CategoryDTO> {
-    const category = await prisma.category.findUnique({
+    const category = await this.prisma.category.findUnique({
       where: { id },
       include: {
         _count: {
@@ -109,22 +111,32 @@ export class CategoryService {
             },
           },
         },
-        children: true,
+        children: {
+          include: {
+            _count: {
+              select: {
+                products: {
+                  where: { isActive: true, archivedAt: null },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
     if (!category) {
-      throw new NotFoundError(`Category with ID '${id}' not found.`);
+      throw new NotFoundError("Category not found");
     }
 
     return toCategoryDTO(category);
   }
 
   /**
-   * Retrieves a category by Slug
+   * Retrieves single category by Slug
    */
   async getCategoryBySlug(slug: string): Promise<CategoryDTO> {
-    const category = await prisma.category.findUnique({
+    const category = await this.prisma.category.findUnique({
       where: { slug },
       include: {
         _count: {
@@ -134,19 +146,29 @@ export class CategoryService {
             },
           },
         },
-        children: true,
+        children: {
+          include: {
+            _count: {
+              select: {
+                products: {
+                  where: { isActive: true, archivedAt: null },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
     if (!category) {
-      throw new NotFoundError(`Category with slug '${slug}' not found.`);
+      throw new NotFoundError(`Category with slug '${slug}' not found`);
     }
 
     return toCategoryDTO(category);
   }
 
   /**
-   * Creates a new Category (Admin operation)
+   * Admin: Creates a new category with slug generation and audit logging
    */
   async createCategory(
     input: CreateCategoryInput,
@@ -154,54 +176,52 @@ export class CategoryService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<CategoryDTO> {
-    const baseSlug = input.slug || this.generateSlug(input.name) || "category";
-    const slug = await this.ensureUniqueSlug(baseSlug);
+    const rawSlug = input.slug ? this.generateSlug(input.slug) : this.generateSlug(input.name);
+    const slug = await this.ensureUniqueSlug(rawSlug);
 
     if (input.parentId) {
-      const parent = await prisma.category.findUnique({
+      const parent = await this.prisma.category.findUnique({
         where: { id: input.parentId },
       });
       if (!parent) {
-        throw new NotFoundError(`Parent category with ID '${input.parentId}' not found.`);
+        throw new NotFoundError("Parent category not found");
       }
     }
 
-    const created = await prisma.$transaction(async (tx) => {
-      const cat = await tx.category.create({
+    const category = await this.prisma.$transaction(async (tx: any) => {
+      const created = await tx.category.create({
         data: {
-          name: input.name,
-          nameAr: input.nameAr,
+          name: input.name.trim(),
+          nameAr: input.nameAr?.trim() || null,
           slug,
           parentId: input.parentId || null,
           isActive: input.isActive ?? true,
         },
-        include: {
-          _count: { select: { products: true } },
-          children: true,
-        },
       });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.CREATE,
-          entity: "Category",
-          entityId: cat.id,
-          summary: `Created category '${cat.name}' (${cat.slug})`,
-          details: { input, generatedSlug: slug },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.CREATE,
+            entity: "Category",
+            entityId: created.id,
+            newData: created,
+            ipAddress: ipAddress || null,
+            summary: `Created category '${created.name}' (${created.slug})`,
+          },
+        });
+      }
 
-      return cat;
+      return created;
     });
 
-    return toCategoryDTO(created);
+    return toCategoryDTO(category);
   }
 
   /**
-   * Updates an existing Category (Admin operation)
+   * Admin: Updates an existing category
    */
   async updateCategory(
     id: string,
@@ -210,70 +230,68 @@ export class CategoryService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<CategoryDTO> {
-    const existing = await prisma.category.findUnique({
-      where: { id },
-    });
-
+    const existing = await this.prisma.category.findUnique({ where: { id } });
     if (!existing) {
-      throw new NotFoundError(`Category with ID '${id}' not found.`);
+      throw new NotFoundError("Category not found");
     }
 
     let slug = existing.slug;
     if (input.slug && input.slug !== existing.slug) {
-      slug = await this.ensureUniqueSlug(input.slug, id);
-    } else if (input.name && !input.slug && input.name !== existing.name) {
-      slug = await this.ensureUniqueSlug(this.generateSlug(input.name), id);
+      const formatted = this.generateSlug(input.slug);
+      slug = await this.ensureUniqueSlug(formatted, id);
+    } else if (input.name && input.name !== existing.name && !input.slug) {
+      const formatted = this.generateSlug(input.name);
+      slug = await this.ensureUniqueSlug(formatted, id);
     }
 
-    if (input.parentId) {
+    if (input.parentId && input.parentId !== existing.parentId) {
       if (input.parentId === id) {
-        throw new ValidationError("A category cannot be its own parent.");
+        throw new ValidationError("Category cannot be its own parent");
       }
-      const parent = await prisma.category.findUnique({
+      const parent = await this.prisma.category.findUnique({
         where: { id: input.parentId },
       });
       if (!parent) {
-        throw new NotFoundError(`Parent category with ID '${input.parentId}' not found.`);
+        throw new NotFoundError("Parent category not found");
       }
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const cat = await tx.category.update({
+    const category = await this.prisma.$transaction(async (tx: any) => {
+      const updated = await tx.category.update({
         where: { id },
         data: {
-          name: input.name !== undefined ? input.name : existing.name,
-          nameAr: input.nameAr !== undefined ? input.nameAr : existing.nameAr,
+          name: input.name !== undefined ? input.name.trim() : undefined,
+          nameAr: input.nameAr !== undefined ? input.nameAr?.trim() || null : undefined,
           slug,
-          parentId: input.parentId !== undefined ? input.parentId : existing.parentId,
-          isActive: input.isActive !== undefined ? input.isActive : existing.isActive,
-        },
-        include: {
-          _count: { select: { products: true } },
-          children: true,
+          parentId: input.parentId !== undefined ? input.parentId : undefined,
+          isActive: input.isActive !== undefined ? input.isActive : undefined,
         },
       });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.UPDATE,
-          entity: "Category",
-          entityId: cat.id,
-          summary: `Updated category '${cat.name}' (${cat.slug})`,
-          details: { before: existing, after: cat, input },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.UPDATE,
+            entity: "Category",
+            entityId: updated.id,
+            oldData: existing,
+            newData: updated,
+            ipAddress: ipAddress || null,
+            summary: `Updated category '${updated.name}' (${updated.slug})`,
+          },
+        });
+      }
 
-      return cat;
+      return updated;
     });
 
-    return toCategoryDTO(updated);
+    return toCategoryDTO(category);
   }
 
   /**
-   * Deletes or deactivates a category (Admin operation)
+   * Admin: Deletes a category if it has no products or child categories
    */
   async deleteCategory(
     id: string,
@@ -281,46 +299,51 @@ export class CategoryService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<void> {
-    const existing = await prisma.category.findUnique({
+    const existing = await this.prisma.category.findUnique({
       where: { id },
       include: {
-        _count: { select: { products: true, children: true } },
+        _count: {
+          select: {
+            products: true,
+            children: true,
+          },
+        },
       },
     });
 
     if (!existing) {
-      throw new NotFoundError(`Category with ID '${id}' not found.`);
+      throw new NotFoundError("Category not found");
     }
 
     if (existing._count.products > 0) {
       throw new ConflictError(
-        `Cannot delete category '${existing.name}' because it contains ${existing._count.products} product(s). Deactivate it or reassign products first.`
+        `Cannot delete category containing ${existing._count.products} product(s). Reassign or delete products first.`
       );
     }
 
     if (existing._count.children > 0) {
       throw new ConflictError(
-        `Cannot delete category '${existing.name}' because it has subcategories. Remove or reassign subcategories first.`
+        `Cannot delete category containing ${existing._count.children} child categories. Delete or move subcategories first.`
       );
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.category.delete({
-        where: { id },
-      });
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.category.delete({ where: { id } });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.DELETE,
-          entity: "Category",
-          entityId: id,
-          summary: `Deleted category '${existing.name}'`,
-          details: { deletedCategory: existing },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.DELETE,
+            entity: "Category",
+            entityId: id,
+            oldData: existing,
+            ipAddress: ipAddress || null,
+            summary: `Deleted category '${existing.name}' (${existing.slug})`,
+          },
+        });
+      }
     });
   }
 }

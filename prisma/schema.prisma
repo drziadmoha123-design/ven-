@@ -12,17 +12,6 @@ enum UserRole {
   ADMIN
 }
 
-enum PurchaseMode {
-  CASH
-  POINTS
-}
-
-enum FundingMode {
-  CASH_ONLY
-  POINTS_ONLY
-  MIXED
-}
-
 enum PaymentMethod {
   CASH_ON_DELIVERY
 }
@@ -67,17 +56,6 @@ enum OrderAmendmentStatus {
   FAILED
 }
 
-enum PointsTransactionType {
-  ORDER_DELIVERED
-  POINTS_PRODUCT_REDEMPTION
-  POINTS_PRODUCT_REFUND
-  FREE_SHIPPING_REDEMPTION
-  FREE_SHIPPING_REFUND
-  POINTS_REVERSAL
-  REFERRAL_REWARD
-  ADMIN_ADJUSTMENT
-}
-
 enum InventoryTransactionType {
   SALE_DEDUCTION
   CANCELLATION_RESTORATION
@@ -101,11 +79,6 @@ enum NotificationType {
   ORDER_DELIVERED
   ORDER_CUSTOMER_REFUSED
   ORDER_CANCELLED
-  POINTS_EARNED
-  POINTS_REDEEMED
-  POINTS_REFUNDED
-  REFERRAL_REWARD_EARNED
-  REFERRAL_REWARD_REVERSED
   ORDER_CONFIRMATION_REQUIRED
   HIGH_CONFIRMATION_ATTEMPTS
   LOW_STOCK
@@ -152,7 +125,6 @@ enum AuditAction {
   DELETE
   STATUS_CHANGE
   INVENTORY_ADJUSTMENT
-  POINTS_ADJUSTMENT
   CONFIRMATION_ATTEMPT
   AMENDMENT_REQUEST
   AMENDMENT_APPLY
@@ -171,7 +143,6 @@ model User {
   role                    UserRole                 @default(CUSTOMER)
   referralCode            String                   @unique
   referredById            String?
-  pointsBalance           Int                      @default(0)
   emailVerifiedAt         DateTime?
   isActive                Boolean                  @default(true)
   archivedAt              DateTime?
@@ -186,7 +157,6 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   addresses               Address[]
   orders                  Order[]
-  pointsTransactions      PointsTransaction[]
   cart                    Cart?
   notifications           Notification[]
   auditLogs               AuditLog[]
@@ -304,9 +274,6 @@ model Product {
   slug                 String           @unique
   categoryId           String
   baseCashPrice        Decimal          @db.Decimal(12, 2)
-  pointsEnabled        Boolean          @default(false)
-  pointsPrice          Int?
-  deliveryRewardPoints Int              @default(0)
   specifications       Json?
   isActive             Boolean          @default(true)
   archivedAt           DateTime?
@@ -332,8 +299,6 @@ model ProductVariant {
   size                  String?
   customAttributes      Json?
   cashPrice             Decimal                @db.Decimal(12, 2)
-  pointsPrice           Int?
-  deliveryRewardPoints  Int                    @default(0)
   stock                 Int                    @default(0)
   isActive              Boolean                @default(true)
   createdAt             DateTime               @default(now())
@@ -381,7 +346,6 @@ model CartItem {
   productId    String
   variantId    String
   quantity     Int            @default(1)
-  purchaseMode PurchaseMode   @default(CASH)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -389,7 +353,7 @@ model CartItem {
   product      Product        @relation(fields: [productId], references: [id])
   variant      ProductVariant @relation(fields: [variantId], references: [id])
 
-  @@unique([cartId, variantId, purchaseMode])
+  @@unique([cartId, variantId])
   @@index([cartId])
 }
 
@@ -415,22 +379,14 @@ model Order {
   addressNotesSnapshot          String?
 
   cashSubtotal                  Decimal                    @db.Decimal(12, 2)
-  pointsSubtotal                Int                        @default(0)
   shippingAmount                Decimal                    @db.Decimal(12, 2)
   totalCashDue                  Decimal                    @db.Decimal(12, 2)
-  productPointsRedeemed         Int                        @default(0)
-  shippingPointsRedeemed        Int                        @default(0)
-  totalPointsRedeemed           Int                        @default(0)
   freeShippingApplied           Boolean                    @default(false)
 
   paymentMethod                 PaymentMethod              @default(CASH_ON_DELIVERY)
-  fundingMode                   FundingMode
 
   estimatedDeliveryTimeSnapshot String
   shippingAmountSnapshot        Decimal                    @db.Decimal(12, 2)
-
-  referralRewarded              Boolean                    @default(false)
-  deliveryPointsAwarded         Boolean                    @default(false)
 
   confirmationStatus            ConfirmationStatus         @default(PENDING)
   confirmationMethod            ConfirmationMethod?
@@ -448,7 +404,6 @@ model Order {
   dataChanges                   OrderDataChange[]
   amendments                    OrderAmendment[]
   statusHistory                 OrderStatusHistory[]
-  pointsTransactions            PointsTransaction[]
   inventoryTransactions         InventoryTransaction[]
   returnWorkflow                ReturnWorkflow?
 
@@ -464,17 +419,13 @@ model OrderItem {
   orderId                   String
   productId                 String
   variantId                 String
-  purchaseMode              PurchaseMode
   quantity                  Int
 
   productNameSnapshot       String
   variantAttributesSnapshot Json?
   skuSnapshot               String
   unitPriceSnapshot         Decimal        @db.Decimal(12, 2)
-  pointsPriceSnapshot       Int?
-  pointsRewardSnapshot      Int            @default(0)
   cashLineTotal             Decimal        @db.Decimal(12, 2)
-  pointsLineTotal           Int            @default(0)
 
   createdAt                 DateTime       @default(now())
   updatedAt                 DateTime       @updatedAt
@@ -540,7 +491,6 @@ model OrderAmendment {
   beforeSnapshot Json
   afterSnapshot  Json
   cashDelta      Decimal              @db.Decimal(12, 2)
-  pointsDelta    Int
   inventoryDelta Json
   status         OrderAmendmentStatus @default(PENDING)
   reviewedById   String?
@@ -567,27 +517,6 @@ model ReturnWorkflow {
   updatedAt    DateTime     @updatedAt
 
   order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-}
-
-model PointsTransaction {
-  id             String                @id @default(uuid())
-  userId         String
-  orderId        String?
-  amount         Int
-  balanceAfter   Int
-  type           PointsTransactionType
-  reason         String
-  createdById    String?
-  idempotencyKey String?               @unique
-  createdAt      DateTime              @default(now())
-
-  user           User                  @relation(fields: [userId], references: [id])
-  order          Order?                @relation(fields: [orderId], references: [id])
-
-  @@index([userId])
-  @@index([orderId])
-  @@index([type])
-  @@index([createdAt])
 }
 
 model InventoryTransaction {

@@ -1,4 +1,4 @@
-import { prisma } from "../../lib/prisma";
+import { prisma as defaultPrisma } from "../../lib/prisma";
 import { NotFoundError, ConflictError, ValidationError } from "../../domain/errors";
 import {
   ProductDTO,
@@ -6,12 +6,23 @@ import {
   CatalogQueryFilters,
   PaginatedCatalogResult,
   toProductDTO,
+  toProductDetailDTO,
   toCategoryDTO,
 } from "../../domain/types/catalog";
 import { CreateProductInput, UpdateProductInput } from "../validators/catalog.schema";
 import { AuditAction, UserRole, InventoryTransactionType, Prisma } from "@prisma/client";
+import { CategoryService, categoryService as defaultCategoryService } from "./category.service";
+import { VariantService, variantService as defaultVariantService } from "./variant.service";
+import { ProductImageService, productImageService as defaultProductImageService } from "./product-image.service";
 
 export class ProductService {
+  constructor(
+    private prisma: any = defaultPrisma,
+    private categoryService: CategoryService = defaultCategoryService,
+    private variantService: VariantService = defaultVariantService,
+    private productImageService: ProductImageService = defaultProductImageService
+  ) {}
+
   /**
    * Generates a URL-safe lowercase slug from string
    */
@@ -27,12 +38,12 @@ export class ProductService {
   /**
    * Ensures slug uniqueness by appending suffix if needed
    */
-  private async ensureUniqueSlug(baseSlug: string, currentId?: string): Promise<string> {
+  private async ensureUniqueSlug(baseSlug: string, currentId?: string, client: any = this.prisma): Promise<string> {
     let slug = baseSlug;
     let counter = 1;
 
     while (true) {
-      const existing = await prisma.product.findUnique({
+      const existing = await client.product.findUnique({
         where: { slug },
       });
 
@@ -46,80 +57,38 @@ export class ProductService {
   }
 
   /**
-   * Public Catalog Query with multi-field search, category hierarchy, price range, points-only, and sorting
+   * Public Catalog Query with multi-field search, category hierarchy, price range, and sorting
    */
   async getCatalog(filters: CatalogQueryFilters = {}): Promise<PaginatedCatalogResult> {
     const page = Math.max(1, filters.page || 1);
     const limit = Math.min(100, Math.max(1, filters.limit || 20));
     const skip = (page - 1) * limit;
 
-    const where: Prisma.ProductWhereInput = {
+    const where: any = {
       isActive: true,
       archivedAt: null,
     };
 
-    // Category Filter (supporting parent categories and subcategories)
+    // Category Filter (supports single category or category + subcategories)
     if (filters.categoryId) {
-      const category = await prisma.category.findUnique({
-        where: { id: filters.categoryId },
-        include: { children: { select: { id: true } } },
-      });
-
-      if (category) {
-        const categoryIds = [category.id, ...category.children.map((c) => c.id)];
-        where.categoryId = { in: categoryIds };
-      } else {
-        where.categoryId = filters.categoryId;
-      }
+      where.categoryId = filters.categoryId;
     } else if (filters.categorySlug) {
-      const category = await prisma.category.findUnique({
+      const category = await this.prisma.category.findUnique({
         where: { slug: filters.categorySlug },
-        include: { children: { select: { id: true } } },
       });
-
       if (category) {
-        const categoryIds = [category.id, ...category.children.map((c) => c.id)];
-        where.categoryId = { in: categoryIds };
+        where.categoryId = category.id;
       }
     }
 
-    // Points-only Filter
-    if (filters.pointsOnly) {
-      where.pointsEnabled = true;
-      where.pointsPrice = { not: null, gt: 0 };
-    }
-
-    // Search Query across Arabic and English titles, descriptions, and categories
-    if (filters.search && filters.search.trim()) {
-      const q = filters.search.trim();
-      where.OR = [
-        { title: { contains: q, mode: "insensitive" } },
-        { titleAr: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-        { descriptionAr: { contains: q, mode: "insensitive" } },
-        {
-          category: {
-            OR: [
-              { name: { contains: q, mode: "insensitive" } },
-              { nameAr: { contains: q, mode: "insensitive" } },
-            ],
-          },
-        },
-      ];
-    }
-
-    // Price Filtering (applied on baseCashPrice or active variants)
+    // Price Range Filter
     if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
       where.baseCashPrice = {};
-      if (filters.minPrice !== undefined) {
-        where.baseCashPrice.gte = filters.minPrice;
-      }
-      if (filters.maxPrice !== undefined) {
-        where.baseCashPrice.lte = filters.maxPrice;
-      }
+      if (filters.minPrice !== undefined) where.baseCashPrice.gte = filters.minPrice;
+      if (filters.maxPrice !== undefined) where.baseCashPrice.lte = filters.maxPrice;
     }
 
-    // In-Stock Only filter (product must have at least one active variant with stock > 0)
+    // Stock Filter: must have at least one active variant with stock > 0
     if (filters.inStockOnly) {
       where.variants = {
         some: {
@@ -129,242 +98,233 @@ export class ProductService {
       };
     }
 
-    // Sorting
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { createdAt: "desc" };
-    if (filters.sortBy === "price-asc") {
-      orderBy = { baseCashPrice: "asc" };
-    } else if (filters.sortBy === "price-desc") {
-      orderBy = { baseCashPrice: "desc" };
-    } else if (filters.sortBy === "points-asc") {
-      orderBy = { pointsPrice: "asc" };
-    } else if (filters.sortBy === "points-desc") {
-      orderBy = { pointsPrice: "desc" };
-    } else {
-      orderBy = { createdAt: "desc" };
+    // Multi-attribute Search across Title & Description in Arabic & English
+    if (filters.search && filters.search.trim()) {
+      const term = filters.search.trim();
+      where.OR = [
+        { title: { contains: term, mode: "insensitive" } },
+        { titleAr: { contains: term, mode: "insensitive" } },
+        { description: { contains: term, mode: "insensitive" } },
+        { descriptionAr: { contains: term, mode: "insensitive" } },
+      ];
     }
 
-    const [products, total, categories, priceAggregate] = await Promise.all([
-      prisma.product.findMany({
+    // Sorting
+    let orderBy: any = { createdAt: "desc" };
+    if (filters.sortBy) {
+      switch (filters.sortBy) {
+        case "price-asc":
+          orderBy = { baseCashPrice: "asc" };
+          break;
+        case "price-desc":
+          orderBy = { baseCashPrice: "desc" };
+          break;
+        case "newest":
+        default:
+          orderBy = { createdAt: "desc" };
+          break;
+      }
+    }
+
+    const [total, products, priceAgg, categories] = await Promise.all([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
         where,
         include: {
           category: true,
-          images: { orderBy: { displayOrder: "asc" } },
-          variants: { where: { isActive: true }, orderBy: { createdAt: "asc" } },
+          variants: {
+            where: { isActive: true },
+          },
+          images: {
+            orderBy: { displayOrder: "asc" },
+          },
         },
         orderBy,
         skip,
         take: limit,
       }),
-      prisma.product.count({ where }),
-      prisma.category.findMany({
-        where: { isActive: true, parentId: null },
+      this.prisma.product.aggregate({
+        where: { isActive: true, archivedAt: null },
+        _min: { baseCashPrice: true },
+        _max: { baseCashPrice: true },
+      }),
+      this.prisma.category.findMany({
+        where: { isActive: true },
         include: {
           _count: {
             select: {
               products: { where: { isActive: true, archivedAt: null } },
             },
           },
-          children: {
-            where: { isActive: true },
-            include: {
-              _count: {
-                select: {
-                  products: { where: { isActive: true, archivedAt: null } },
-                },
-              },
-            },
-          },
         },
         orderBy: { name: "asc" },
       }),
-      prisma.product.aggregate({
-        where: { isActive: true, archivedAt: null },
-        _min: { baseCashPrice: true },
-        _max: { baseCashPrice: true },
-      }),
     ]);
 
+    const items = products.map((p: any) => toProductDTO(p));
     const totalPages = Math.ceil(total / limit) || 1;
 
     return {
-      items: products.map(toProductDTO),
+      items,
       total,
       page,
       limit,
       totalPages,
       hasMore: page < totalPages,
-      availableCategories: categories.map(toCategoryDTO),
       priceRange: {
-        min: Number(priceAggregate._min.baseCashPrice || 0),
-        max: Number(priceAggregate._max.baseCashPrice || 10000),
+        min: priceAgg._min?.baseCashPrice ?? 0,
+        max: priceAgg._max?.baseCashPrice ?? 1000,
       },
+      availableCategories: categories.map((c: any) => toCategoryDTO(c)),
     };
   }
 
   /**
-   * Retrieves single product detail by ID or Slug
+   * Retrieves single product details by ID or Slug
    */
-  async getProductByIdOrSlug(idOrSlug: string, includeInactive = false): Promise<ProductDetailDTO> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-
-    const product = await prisma.product.findFirst({
+  async getProductByIdOrSlug(identifier: string, includeInactive = false): Promise<ProductDetailDTO> {
+    const product = await this.prisma.product.findFirst({
       where: {
-        OR: isUuid ? [{ id: idOrSlug }, { slug: idOrSlug }] : [{ slug: idOrSlug }],
-        ...(includeInactive ? {} : { isActive: true, archivedAt: null }),
+        OR: [{ id: identifier }, { slug: identifier }],
       },
       include: {
         category: true,
-        images: { orderBy: { displayOrder: "asc" } },
         variants: {
           where: includeInactive ? undefined : { isActive: true },
           orderBy: { createdAt: "asc" },
         },
+        images: {
+          orderBy: { displayOrder: "asc" },
+        },
       },
     });
 
-    if (!product) {
-      throw new NotFoundError(`Product '${idOrSlug}' not found.`);
+    if (!product || (!includeInactive && (!product.isActive || product.archivedAt))) {
+      throw new NotFoundError("Product not found");
     }
 
-    const baseDto = toProductDTO(product);
-
-    // Build available colors, sizes, and attributes matrix
-    const availableColors = Array.from(
-      new Set(baseDto.variants.map((v) => v.color).filter((c): c is string => Boolean(c)))
-    );
-    const availableSizes = Array.from(
-      new Set(baseDto.variants.map((v) => v.size).filter((s): s is string => Boolean(s)))
-    );
-
-    const attributesMatrix: Record<string, string[]> = {};
-    if (availableColors.length > 0) attributesMatrix.color = availableColors;
-    if (availableSizes.length > 0) attributesMatrix.size = availableSizes;
-
-    return {
-      ...baseDto,
-      availableColors,
-      availableSizes,
-      attributesMatrix,
-    };
+    return toProductDetailDTO(product);
   }
 
   /**
-   * Creates a new Product with variants and images in an atomic transaction (Admin operation)
+   * Admin: Creates a new product atomically with initial variants, images, and inventory logs
    */
   async createProduct(
     input: CreateProductInput,
     actorId?: string,
     actorRole?: UserRole,
     ipAddress?: string
-  ): Promise<ProductDTO> {
-    const category = await prisma.category.findUnique({
+  ): Promise<ProductDetailDTO> {
+    // Validate category exists
+    const category = await this.prisma.category.findUnique({
       where: { id: input.categoryId },
     });
-
     if (!category) {
-      throw new NotFoundError(`Category with ID '${input.categoryId}' not found.`);
+      throw new NotFoundError("Category not found");
     }
 
-    const baseSlug = input.slug || this.generateSlug(input.title) || "product";
-    const slug = await this.ensureUniqueSlug(baseSlug);
+    const rawSlug = input.slug ? this.generateSlug(input.slug) : this.generateSlug(input.title);
+    const slug = await this.ensureUniqueSlug(rawSlug);
 
-    const created = await prisma.$transaction(async (tx) => {
+    // Validate variant combinations (color + size uniqueness within input)
+    const variantSet = new Set<string>();
+    for (const v of input.variants) {
+      const key = `${v.color?.trim().toLowerCase() || ""}|${v.size?.trim().toLowerCase() || ""}`;
+      if (variantSet.has(key)) {
+        throw new ConflictError(
+          `Duplicate variant combination '${v.color || "N/A"}' - '${v.size || "N/A"}' in creation payload.`
+        );
+      }
+      variantSet.add(key);
+    }
+
+    const createdProduct = await this.prisma.$transaction(async (tx: any) => {
+      // 1. Create Product
       const product = await tx.product.create({
         data: {
-          title: input.title,
-          titleAr: input.titleAr || null,
-          description: input.description,
-          descriptionAr: input.descriptionAr || null,
+          title: input.title.trim(),
+          titleAr: input.titleAr?.trim() || null,
+          description: input.description.trim(),
+          descriptionAr: input.descriptionAr?.trim() || null,
           slug,
           categoryId: input.categoryId,
           baseCashPrice: input.baseCashPrice,
-          pointsEnabled: input.pointsEnabled ?? false,
-          pointsPrice: input.pointsPrice || null,
-          deliveryRewardPoints: input.deliveryRewardPoints ?? 0,
-          specifications: input.specifications ? JSON.parse(JSON.stringify(input.specifications)) : undefined,
+          specifications: (input.specifications as any) || null,
           isActive: input.isActive ?? true,
         },
       });
 
-      // Create variants
-      for (const variantInput of input.variants) {
-        const v = await tx.productVariant.create({
+      // 2. Create Variants & Initial Stock Transactions
+      for (const v of input.variants) {
+        const variant = await tx.productVariant.create({
           data: {
             productId: product.id,
-            sku: variantInput.sku,
-            color: variantInput.color || null,
-            size: variantInput.size || null,
-            customAttributes: variantInput.customAttributes
-              ? JSON.parse(JSON.stringify(variantInput.customAttributes))
-              : undefined,
-            cashPrice: variantInput.cashPrice,
-            pointsPrice: variantInput.pointsPrice || null,
-            deliveryRewardPoints: variantInput.deliveryRewardPoints ?? input.deliveryRewardPoints ?? 0,
-            stock: variantInput.stock ?? 0,
-            isActive: variantInput.isActive ?? true,
+            sku: v.sku.trim(),
+            color: v.color?.trim() || null,
+            size: v.size?.trim() || null,
+            customAttributes: (v.customAttributes as any) || null,
+            cashPrice: v.cashPrice,
+            stock: v.stock ?? 0,
+            isActive: v.isActive ?? true,
           },
         });
 
-        if (v.stock > 0) {
+        if (variant.stock > 0) {
           await tx.inventoryTransaction.create({
             data: {
-              variantId: v.id,
+              variantId: variant.id,
               type: InventoryTransactionType.ADMIN_ADJUSTMENT,
-              quantity: v.stock,
-              beforeStock: 0,
-              afterStock: v.stock,
-              reason: "Initial product creation variant stock",
-              createdById: actorId || null,
+              quantity: variant.stock,
+              referenceId: `INIT_${variant.id}`,
+              notes: "Initial variant stock on product creation",
             },
           });
         }
       }
 
-      // Create images if provided
+      // 3. Create Images
       if (input.images && input.images.length > 0) {
-        for (let i = 0; i < input.images.length; i++) {
-          const img = input.images[i];
+        let hasPrimary = input.images.some((i) => i.isPrimary);
+        for (let idx = 0; idx < input.images.length; idx++) {
+          const img = input.images[idx];
+          const isPrimary = hasPrimary ? img.isPrimary : idx === 0;
           await tx.productImage.create({
             data: {
               productId: product.id,
               storageKey: img.storageKey,
               url: img.url,
               altText: img.altText || null,
-              displayOrder: img.displayOrder ?? i,
-              isPrimary: img.isPrimary || i === 0,
+              displayOrder: img.displayOrder ?? idx,
+              isPrimary: isPrimary ?? false,
             },
           });
         }
       }
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.CREATE,
-          entity: "Product",
-          entityId: product.id,
-          summary: `Created product '${product.title}' (${product.slug}) with ${input.variants.length} variant(s)`,
-          details: { productId: product.id, slug, variantCount: input.variants.length },
-          ipAddress: ipAddress || null,
-        },
-      });
+      // 4. Audit Log
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.CREATE,
+            entity: "Product",
+            entityId: product.id,
+            newData: product,
+            ipAddress: ipAddress || null,
+            summary: `Created product '${product.title}' with ${input.variants.length} variant(s)`,
+          },
+        });
+      }
 
-      return tx.product.findUniqueOrThrow({
-        where: { id: product.id },
-        include: {
-          category: true,
-          images: { orderBy: { displayOrder: "asc" } },
-          variants: { orderBy: { createdAt: "asc" } },
-        },
-      });
+      return product;
     });
 
-    return toProductDTO(created);
+    return this.getProductByIdOrSlug(createdProduct.id, true);
   }
 
   /**
-   * Updates an existing Product (Admin operation)
+   * Admin: Updates product general information
    */
   async updateProduct(
     id: string,
@@ -372,83 +332,82 @@ export class ProductService {
     actorId?: string,
     actorRole?: UserRole,
     ipAddress?: string
-  ): Promise<ProductDTO> {
-    const existing = await prisma.product.findUnique({
+  ): Promise<ProductDetailDTO> {
+    const existing = await this.prisma.product.findUnique({
       where: { id },
-      include: { category: true, variants: true, images: true },
+      include: { variants: true },
     });
 
     if (!existing) {
-      throw new NotFoundError(`Product with ID '${id}' not found.`);
-    }
-
-    if (input.categoryId && input.categoryId !== existing.categoryId) {
-      const cat = await prisma.category.findUnique({
-        where: { id: input.categoryId },
-      });
-      if (!cat) {
-        throw new NotFoundError(`Category with ID '${input.categoryId}' not found.`);
-      }
+      throw new NotFoundError("Product not found");
     }
 
     let slug = existing.slug;
     if (input.slug && input.slug !== existing.slug) {
-      slug = await this.ensureUniqueSlug(input.slug, id);
-    } else if (input.title && !input.slug && input.title !== existing.title) {
-      slug = await this.ensureUniqueSlug(this.generateSlug(input.title), id);
+      const formatted = this.generateSlug(input.slug);
+      slug = await this.ensureUniqueSlug(formatted, id);
+    } else if (input.title && input.title !== existing.title && !input.slug) {
+      const formatted = this.generateSlug(input.title);
+      slug = await this.ensureUniqueSlug(formatted, id);
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const product = await tx.product.update({
+    if (input.categoryId && input.categoryId !== existing.categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: input.categoryId },
+      });
+      if (!category) {
+        throw new NotFoundError("Category not found");
+      }
+    }
+
+    // Invariant: Product cannot be activated without at least one active variant
+    if (input.isActive === true && !existing.isActive) {
+      const activeVariants = existing.variants.filter((v: any) => v.isActive);
+      if (activeVariants.length === 0) {
+        throw new ValidationError("Product must have at least one active variant before activation.");
+      }
+    }
+
+    const updated = await this.prisma.$transaction(async (tx: any) => {
+      const res = await tx.product.update({
         where: { id },
         data: {
-          title: input.title !== undefined ? input.title : existing.title,
-          titleAr: input.titleAr !== undefined ? input.titleAr : existing.titleAr,
-          description: input.description !== undefined ? input.description : existing.description,
-          descriptionAr: input.descriptionAr !== undefined ? input.descriptionAr : existing.descriptionAr,
+          title: input.title !== undefined ? input.title.trim() : undefined,
+          titleAr: input.titleAr !== undefined ? input.titleAr?.trim() || null : undefined,
+          description: input.description !== undefined ? input.description.trim() : undefined,
+          descriptionAr: input.descriptionAr !== undefined ? input.descriptionAr?.trim() || null : undefined,
           slug,
-          categoryId: input.categoryId !== undefined ? input.categoryId : existing.categoryId,
-          baseCashPrice: input.baseCashPrice !== undefined ? input.baseCashPrice : existing.baseCashPrice,
-          pointsEnabled: input.pointsEnabled !== undefined ? input.pointsEnabled : existing.pointsEnabled,
-          pointsPrice: input.pointsPrice !== undefined ? input.pointsPrice : existing.pointsPrice,
-          deliveryRewardPoints:
-            input.deliveryRewardPoints !== undefined ? input.deliveryRewardPoints : existing.deliveryRewardPoints,
-          specifications:
-            input.specifications !== undefined
-              ? input.specifications
-                ? JSON.parse(JSON.stringify(input.specifications))
-                : null
-              : undefined,
-          isActive: input.isActive !== undefined ? input.isActive : existing.isActive,
-        },
-        include: {
-          category: true,
-          images: { orderBy: { displayOrder: "asc" } },
-          variants: { orderBy: { createdAt: "asc" } },
+          categoryId: input.categoryId,
+          baseCashPrice: input.baseCashPrice,
+          specifications: input.specifications !== undefined ? (input.specifications as any) : undefined,
+          isActive: input.isActive,
         },
       });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.UPDATE,
-          entity: "Product",
-          entityId: product.id,
-          summary: `Updated product '${product.title}' (${product.slug})`,
-          details: { before: existing, after: product },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.UPDATE,
+            entity: "Product",
+            entityId: id,
+            oldData: existing,
+            newData: res,
+            ipAddress: ipAddress || null,
+            summary: `Updated product '${res.title}'`,
+          },
+        });
+      }
 
-      return product;
+      return res;
     });
 
-    return toProductDTO(updated);
+    return this.getProductByIdOrSlug(updated.id, true);
   }
 
   /**
-   * Deactivates or archives a product (Admin operation)
+   * Admin: Archives/soft-deletes a product
    */
   async deleteProduct(
     id: string,
@@ -456,19 +415,12 @@ export class ProductService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<void> {
-    const existing = await prisma.product.findUnique({
-      where: { id },
-      include: {
-        _count: { select: { orderItems: true } },
-      },
-    });
-
+    const existing = await this.prisma.product.findUnique({ where: { id } });
     if (!existing) {
-      throw new NotFoundError(`Product with ID '${id}' not found.`);
+      throw new NotFoundError("Product not found");
     }
 
-    await prisma.$transaction(async (tx) => {
-      // Soft-delete: mark inactive and set archivedAt
+    await this.prisma.$transaction(async (tx: any) => {
       await tx.product.update({
         where: { id },
         data: {
@@ -477,24 +429,20 @@ export class ProductService {
         },
       });
 
-      // Also deactivate all variants
-      await tx.productVariant.updateMany({
-        where: { productId: id },
-        data: { isActive: false },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.DELETE,
-          entity: "Product",
-          entityId: id,
-          summary: `Archived/Deactivated product '${existing.title}' (${existing.slug})`,
-          details: { archivedProduct: existing },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.DELETE,
+            entity: "Product",
+            entityId: id,
+            oldData: existing,
+            ipAddress: ipAddress || null,
+            summary: `Archived product '${existing.title}' (${existing.slug})`,
+          },
+        });
+      }
     });
   }
 }

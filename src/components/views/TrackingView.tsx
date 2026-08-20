@@ -145,7 +145,7 @@ export const TrackingView: React.FC<TrackingViewProps> = ({ order, onNavigate })
           <div>
             <span className="text-slate-400 block mb-1">طريقة الدفع:</span>
             <span className="font-bold text-white">
-              {order.method === 'POINTS' ? 'نقاط الولاء Ven+' : 'بطاقة مدى / ائتمانية'}
+              {order.method === 'CARD' ? 'بطاقة بنكية' : 'الدفع عند الاستلام (نقداً)'}
             </span>
           </div>
           <div>

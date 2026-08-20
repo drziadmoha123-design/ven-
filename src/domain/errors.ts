@@ -11,7 +11,6 @@ export type ErrorTaxonomyCode =
   | "CONFLICT"
   | "INVALID_STATE_TRANSITION"
   | "INSUFFICIENT_STOCK"
-  | "INSUFFICIENT_POINTS"
   | "INVALID_REFERRAL_CODE"
   | "SELF_REFERRAL"
   | "REFERRAL_ALREADY_ASSIGNED"
@@ -78,12 +77,6 @@ export class ConflictError extends DomainError {
 export class InsufficientStockError extends DomainError {
   constructor(message: string = "Insufficient stock available for one or more items") {
     super("INSUFFICIENT_STOCK", message, 409);
-  }
-}
-
-export class InsufficientPointsError extends DomainError {
-  constructor(message: string = "Customer points balance is insufficient") {
-    super("INSUFFICIENT_POINTS", message, 409);
   }
 }
 

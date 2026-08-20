@@ -14,9 +14,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  points: number;
   referralCode: string;
-  tier?: string;
   role?: 'ADMIN' | 'CUSTOMER';
 }
 
@@ -25,7 +23,6 @@ export interface Product {
   name: string;
   price: number;
   oldPrice?: number;
-  pointsPrice: number;
   category: string;
   description?: string;
   desc?: string;
@@ -61,9 +58,8 @@ export interface Order {
   items: CartItem[];
   itemsCount?: number;
   total: number | string;
-  pointsSpent?: number;
   status: OrderStatus;
-  paymentMethod?: 'CASH' | 'POINTS';
+  paymentMethod?: 'CASH_ON_DELIVERY';
   method?: string;
   address: OrderAddress;
   trackingNumber?: string;
@@ -75,9 +71,6 @@ export interface AdminStats {
   ordersCount?: number;
   totalUsers?: number;
   customers?: number;
-  pointsIssued?: number;
-  pointsRedeemed?: number;
-  pointsSpent?: number;
   topProducts?: Array<{ id: number | string; name: string; sold: number; revenue?: number }>;
   salesByDay?: Array<{ day: string; val: number }>;
 }

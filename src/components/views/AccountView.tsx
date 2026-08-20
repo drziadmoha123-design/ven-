@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Order, ViewType } from '../../types';
-import { Star, Copy, Check, Package, Gift, ArrowLeft, ExternalLink } from 'lucide-react';
+import { Copy, Check, Package, Gift, ArrowLeft, ExternalLink, UserCheck } from 'lucide-react';
 
 interface AccountViewProps {
   user: User;
@@ -32,30 +32,18 @@ export const AccountView: React.FC<AccountViewProps> = ({
             <p className="text-sm text-slate-400 font-mono mt-0.5">{user.email}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full">
-                عضو بلاتيني VIP
+                حساب موثق
               </span>
             </div>
           </div>
         </div>
 
-        {/* Loyalty Wallet Card */}
-        <div className="w-full sm:w-auto bg-slate-900/90 border border-slate-800 p-4 rounded-2xl flex items-center gap-5">
-          <div>
-            <div className="text-xs text-slate-400 mb-1 flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-              <span>محفظة نقاط الولاء</span>
-            </div>
-            <div className="text-2xl font-black text-yellow-400 font-mono">
-              {user.points.toLocaleString('ar-SA')} <span className="text-xs font-sans text-yellow-500/80">نقطة</span>
-            </div>
-          </div>
-          <button
-            onClick={() => onNavigate('products')}
-            className="btn-primary text-xs px-4 py-2 rounded-xl font-bold whitespace-nowrap mr-2"
-          >
-            استبدال النقاط
-          </button>
-        </div>
+        <button
+          onClick={() => onNavigate('products')}
+          className="btn-primary text-xs px-5 py-2.5 rounded-xl font-bold whitespace-nowrap"
+        >
+          تصفح المتجر
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -116,7 +104,7 @@ export const AccountView: React.FC<AccountViewProps> = ({
                             <span>•</span>
                             <span>{order.itemsCount} منتجات</span>
                             <span>•</span>
-                            <span>{order.method === 'POINTS' ? 'نقاط' : 'كاش'}</span>
+                            <span>دفع نقد / بطاقة</span>
                           </div>
                         </div>
 
@@ -141,14 +129,13 @@ export const AccountView: React.FC<AccountViewProps> = ({
         {/* Right Column: Referral System Card */}
         <div className="lg:col-span-4 space-y-6">
           <div className="glass-card p-6 md:p-8">
-            <div className="w-12 h-12 rounded-2xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4">
               <Gift className="w-6 h-6" />
             </div>
 
             <h3 className="text-lg font-bold text-white mb-2">برنامج إحالة الأصدقاء</h3>
             <p className="text-xs text-slate-300 leading-relaxed mb-6">
-              شارك كود الإحالة الخاص بك مع أصدقائك. سيحصل صديقك على خصم و500 نقطة، وستحصل أنت على{' '}
-              <strong className="text-yellow-400">1000 نقطة مجانية</strong> فور إتمام أول طلب له!
+              شارك كود الإحالة الخاص بك مع أصدقائك للحصول على خصومات وعروض حصرية على طلباتهم القادمة.
             </p>
 
             <div className="bg-slate-900 border border-slate-700 p-4 rounded-xl mb-4">
@@ -174,11 +161,6 @@ export const AccountView: React.FC<AccountViewProps> = ({
                   )}
                 </button>
               </div>
-            </div>
-
-            <div className="text-[11px] text-slate-400 flex items-center gap-2">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400 shrink-0" />
-              <span>تمت مكافأة 3 أصدقاء مسجلين عبر كودك هذا الشهر</span>
             </div>
           </div>
         </div>

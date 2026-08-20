@@ -1,6 +1,6 @@
 {
   "name": "Ven+ Store & Loyalty Platform",
-  "description": "An interactive e-commerce and loyalty rewards platform with dual cash and points payment, order tracking, and admin dashboard.",
+  "description": "An interactive e-commerce platform with cash on delivery checkout, product catalog, order tracking, and admin dashboard.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

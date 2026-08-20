@@ -1,10 +1,12 @@
-import { prisma } from "../../lib/prisma";
+import { prisma as defaultPrisma } from "../../lib/prisma";
 import { NotFoundError, ConflictError, ValidationError } from "../../domain/errors";
 import { ProductVariantDTO, toProductVariantDTO } from "../../domain/types/catalog";
 import { CreateVariantInput, UpdateVariantInput } from "../validators/catalog.schema";
 import { AuditAction, UserRole, InventoryTransactionType } from "@prisma/client";
 
 export class VariantService {
+  constructor(private prisma: any = defaultPrisma) {}
+
   /**
    * Generates a unique SKU if not provided
    */
@@ -23,19 +25,20 @@ export class VariantService {
     productId: string,
     color?: string | null,
     size?: string | null,
-    excludeVariantId?: string
+    excludeVariantId?: string,
+    client: any = this.prisma
   ): Promise<void> {
     const normalizedColor = color?.trim().toLowerCase() || null;
     const normalizedSize = size?.trim().toLowerCase() || null;
 
-    const existingVariants = await prisma.productVariant.findMany({
+    const existingVariants = await client.productVariant.findMany({
       where: {
         productId,
         id: excludeVariantId ? { not: excludeVariantId } : undefined,
       },
     });
 
-    const duplicate = existingVariants.find((v) => {
+    const duplicate = existingVariants.find((v: any) => {
       const vColor = v.color?.trim().toLowerCase() || null;
       const vSize = v.size?.trim().toLowerCase() || null;
       return vColor === normalizedColor && vSize === normalizedSize;
@@ -52,14 +55,13 @@ export class VariantService {
    * Retrieves all variants for a product
    */
   async getProductVariants(productId: string, includeInactive = false): Promise<ProductVariantDTO[]> {
-    const variants = await prisma.productVariant.findMany({
+    const variants = await this.prisma.productVariant.findMany({
       where: {
         productId,
         isActive: includeInactive ? undefined : true,
       },
       orderBy: { createdAt: "asc" },
     });
-
     return variants.map(toProductVariantDTO);
   }
 
@@ -67,20 +69,20 @@ export class VariantService {
    * Retrieves a single variant by ID
    */
   async getVariantById(id: string): Promise<ProductVariantDTO> {
-    const variant = await prisma.productVariant.findUnique({
+    const variant = await this.prisma.productVariant.findUnique({
       where: { id },
       include: { product: true },
     });
 
     if (!variant) {
-      throw new NotFoundError(`Product variant with ID '${id}' not found.`);
+      throw new NotFoundError("Product variant not found");
     }
 
     return toProductVariantDTO(variant);
   }
 
   /**
-   * Adds a variant to a product (Admin operation)
+   * Creates a new variant for a product
    */
   async createVariant(
     productId: string,
@@ -89,79 +91,75 @@ export class VariantService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<ProductVariantDTO> {
-    const product = await prisma.product.findUnique({
+    const product = await this.prisma.product.findUnique({
       where: { id: productId },
     });
 
     if (!product) {
-      throw new NotFoundError(`Product with ID '${productId}' not found.`);
+      throw new NotFoundError("Product not found");
+    }
+
+    // Check SKU uniqueness
+    const existingSku = await this.prisma.productVariant.findFirst({
+      where: { sku: input.sku },
+    });
+
+    if (existingSku) {
+      throw new ConflictError(`Variant with SKU '${input.sku}' already exists.`);
     }
 
     await this.validateUniqueCombination(productId, input.color, input.size);
 
-    const sku = input.sku || this.generateSku(product.slug, input.color, input.size);
-
-    // Verify SKU uniqueness
-    const existingSku = await prisma.productVariant.findUnique({
-      where: { sku },
-    });
-
-    if (existingSku) {
-      throw new ConflictError(`Variant SKU '${sku}' is already in use.`);
-    }
-
-    const created = await prisma.$transaction(async (tx) => {
-      const variant = await tx.productVariant.create({
+    const variant = await this.prisma.$transaction(async (tx: any) => {
+      const created = await tx.productVariant.create({
         data: {
           productId,
-          sku,
-          color: input.color || null,
-          size: input.size || null,
-          customAttributes: input.customAttributes ? JSON.parse(JSON.stringify(input.customAttributes)) : undefined,
+          sku: input.sku.trim(),
+          color: input.color?.trim() || null,
+          size: input.size?.trim() || null,
+          customAttributes: (input.customAttributes as any) || null,
           cashPrice: input.cashPrice,
-          pointsPrice: input.pointsPrice || null,
-          deliveryRewardPoints: input.deliveryRewardPoints ?? product.deliveryRewardPoints ?? 0,
           stock: input.stock ?? 0,
           isActive: input.isActive ?? true,
         },
       });
 
       // Record initial inventory transaction if stock > 0
-      if (variant.stock > 0) {
+      if (created.stock > 0) {
         await tx.inventoryTransaction.create({
           data: {
-            variantId: variant.id,
+            variantId: created.id,
             type: InventoryTransactionType.ADMIN_ADJUSTMENT,
-            quantity: variant.stock,
-            beforeStock: 0,
-            afterStock: variant.stock,
-            reason: "Initial variant stock creation",
-            createdById: actorId || null,
+            quantity: created.stock,
+            referenceId: `INIT_${created.id}`,
+            notes: "Initial variant stock on creation",
           },
         });
       }
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.CREATE,
-          entity: "ProductVariant",
-          entityId: variant.id,
-          summary: `Created variant '${variant.sku}' for product '${product.title}'`,
-          details: { variantId: variant.id, sku: variant.sku, stock: variant.stock },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.CREATE,
+            entity: "ProductVariant",
+            entityId: created.id,
+            newData: created,
+            ipAddress: ipAddress || null,
+            summary: `Created variant '${created.sku}' for product ${productId}`,
+          },
+        });
+      }
 
-      return variant;
+      return created;
     });
 
-    return toProductVariantDTO(created);
+    return toProductVariantDTO(variant);
   }
 
   /**
-   * Updates an existing variant (Admin operation)
+   * Updates an existing variant
    */
   async updateVariant(
     id: string,
@@ -170,33 +168,38 @@ export class VariantService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<ProductVariantDTO> {
-    const existing = await prisma.productVariant.findUnique({
+    const existing = await this.prisma.productVariant.findUnique({
       where: { id },
       include: { product: true },
     });
 
     if (!existing) {
-      throw new NotFoundError(`Product variant with ID '${id}' not found.`);
+      throw new NotFoundError("Product variant not found");
     }
 
-    if (input.color !== undefined || input.size !== undefined) {
-      const targetColor = input.color !== undefined ? input.color : existing.color;
-      const targetSize = input.size !== undefined ? input.size : existing.size;
-      await this.validateUniqueCombination(existing.productId, targetColor, targetSize, id);
-    }
-
+    // Check SKU collision
     if (input.sku && input.sku !== existing.sku) {
-      const skuCheck = await prisma.productVariant.findUnique({
-        where: { sku: input.sku },
+      const existingSku = await this.prisma.productVariant.findFirst({
+        where: { sku: input.sku, id: { not: id } },
       });
-      if (skuCheck) {
-        throw new ConflictError(`Variant SKU '${input.sku}' is already in use.`);
+      if (existingSku) {
+        throw new ConflictError(`Variant with SKU '${input.sku}' already exists.`);
       }
     }
 
-    // Check if deactivating this variant violates "every active product must have at least one active variant"
-    if (input.isActive === false && existing.isActive) {
-      const activeCount = await prisma.productVariant.count({
+    // Check color/size collision
+    if (input.color !== undefined || input.size !== undefined) {
+      await this.validateUniqueCombination(
+        existing.productId,
+        input.color !== undefined ? input.color : existing.color,
+        input.size !== undefined ? input.size : existing.size,
+        id
+      );
+    }
+
+    // Invariant: If product is active, cannot deactivate the ONLY active variant
+    if (input.isActive === false && existing.isActive && existing.product.isActive) {
+      const activeCount = await this.prisma.productVariant.count({
         where: {
           productId: existing.productId,
           isActive: true,
@@ -204,73 +207,64 @@ export class VariantService {
         },
       });
 
-      if (activeCount === 0 && existing.product.isActive) {
-        throw new ValidationError(
-          "Cannot deactivate this variant. An active product must have at least one active variant."
-        );
+      if (activeCount === 0) {
+        throw new ValidationError("Cannot deactivate the only active variant of an active product. Deactivate product first.");
       }
     }
 
-    const updated = await prisma.$transaction(async (tx) => {
-      const stockChanged = input.stock !== undefined && input.stock !== existing.stock;
+    const updated = await this.prisma.$transaction(async (tx: any) => {
+      const stockDelta = input.stock !== undefined ? input.stock - existing.stock : 0;
 
-      const variant = await tx.productVariant.update({
+      const res = await tx.productVariant.update({
         where: { id },
         data: {
-          sku: input.sku !== undefined ? input.sku : existing.sku,
-          color: input.color !== undefined ? input.color : existing.color,
-          size: input.size !== undefined ? input.size : existing.size,
-          customAttributes:
-            input.customAttributes !== undefined
-              ? input.customAttributes
-                ? JSON.parse(JSON.stringify(input.customAttributes))
-                : null
-              : undefined,
-          cashPrice: input.cashPrice !== undefined ? input.cashPrice : existing.cashPrice,
-          pointsPrice: input.pointsPrice !== undefined ? input.pointsPrice : existing.pointsPrice,
-          deliveryRewardPoints:
-            input.deliveryRewardPoints !== undefined ? input.deliveryRewardPoints : existing.deliveryRewardPoints,
-          stock: input.stock !== undefined ? input.stock : existing.stock,
-          isActive: input.isActive !== undefined ? input.isActive : existing.isActive,
+          sku: input.sku?.trim(),
+          color: input.color !== undefined ? input.color?.trim() || null : undefined,
+          size: input.size !== undefined ? input.size?.trim() || null : undefined,
+          customAttributes: input.customAttributes !== undefined ? (input.customAttributes as any) : undefined,
+          cashPrice: input.cashPrice,
+          stock: input.stock,
+          isActive: input.isActive,
         },
       });
 
-      if (stockChanged && input.stock !== undefined) {
-        const delta = input.stock - existing.stock;
+      // Record inventory adjustment if stock changed
+      if (stockDelta !== 0) {
         await tx.inventoryTransaction.create({
           data: {
-            variantId: variant.id,
+            variantId: id,
             type: InventoryTransactionType.ADMIN_ADJUSTMENT,
-            quantity: delta,
-            beforeStock: existing.stock,
-            afterStock: input.stock,
-            reason: "Admin stock manual adjustment",
-            createdById: actorId || null,
+            quantity: stockDelta,
+            referenceId: `ADJ_${id}_${Date.now()}`,
+            notes: `Manual stock adjustment from ${existing.stock} to ${res.stock}`,
           },
         });
       }
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.UPDATE,
-          entity: "ProductVariant",
-          entityId: variant.id,
-          summary: `Updated variant '${variant.sku}' for product '${existing.product.title}'`,
-          details: { before: existing, after: variant },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.UPDATE,
+            entity: "ProductVariant",
+            entityId: id,
+            oldData: existing,
+            newData: res,
+            ipAddress: ipAddress || null,
+            summary: `Updated variant '${res.sku}'`,
+          },
+        });
+      }
 
-      return variant;
+      return res;
     });
 
     return toProductVariantDTO(updated);
   }
 
   /**
-   * Deletes a variant (Admin operation)
+   * Deletes a variant
    */
   async deleteVariant(
     id: string,
@@ -278,55 +272,47 @@ export class VariantService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<void> {
-    const existing = await prisma.productVariant.findUnique({
+    const existing = await this.prisma.productVariant.findUnique({
       where: { id },
-      include: {
-        product: true,
-        _count: { select: { orderItems: true, cartItems: true } },
-      },
+      include: { product: true },
     });
 
     if (!existing) {
-      throw new NotFoundError(`Product variant with ID '${id}' not found.`);
+      throw new NotFoundError("Product variant not found");
     }
 
-    const otherActiveCount = await prisma.productVariant.count({
-      where: {
-        productId: existing.productId,
-        isActive: true,
-        id: { not: id },
-      },
-    });
-
-    if (otherActiveCount === 0 && existing.product.isActive) {
-      throw new ValidationError(
-        "Cannot delete this variant. Every active product must have at least one active variant."
-      );
-    }
-
-    if (existing._count.orderItems > 0) {
-      throw new ConflictError(
-        `Cannot delete variant '${existing.sku}' because it is associated with existing orders. Deactivate it instead.`
-      );
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.productVariant.delete({
-        where: { id },
-      });
-
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.DELETE,
-          entity: "ProductVariant",
-          entityId: id,
-          summary: `Deleted variant '${existing.sku}' from product '${existing.product.title}'`,
-          details: { deletedVariant: existing },
-          ipAddress: ipAddress || null,
+    // Invariant: If product is active, cannot delete the ONLY active variant
+    if (existing.isActive && existing.product.isActive) {
+      const activeCount = await this.prisma.productVariant.count({
+        where: {
+          productId: existing.productId,
+          isActive: true,
+          id: { not: id },
         },
       });
+
+      if (activeCount === 0) {
+        throw new ValidationError("Cannot delete the only active variant of an active product. Deactivate product first.");
+      }
+    }
+
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.productVariant.delete({ where: { id } });
+
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.DELETE,
+            entity: "ProductVariant",
+            entityId: id,
+            oldData: existing,
+            ipAddress: ipAddress || null,
+            summary: `Deleted variant '${existing.sku}'`,
+          },
+        });
+      }
     });
   }
 }

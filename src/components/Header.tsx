@@ -141,9 +141,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button
                   onClick={() => onNavigate('products')}
-                  className="text-sm font-medium text-purple-400 hover:text-purple-300 transition flex items-center gap-1"
+                  className="text-sm font-medium text-slate-400 hover:text-white transition"
                 >
-                  <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" /> العروض والنقاط
+                  العروض المميزة
                 </button>
               </nav>
             </div>
@@ -162,21 +162,6 @@ export const Header: React.FC<HeaderProps> = ({
                   placeholder="ابحث عن أحدث المنتجات..."
                   className="w-full bg-slate-900/90 border border-slate-700/80 rounded-full py-2 pr-10 pl-4 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition text-white placeholder-slate-500"
                 />
-              </div>
-
-              {/* Points Wallet Badge */}
-              <div
-                onClick={() => onNavigate('account')}
-                className="hidden sm:flex items-center gap-2 bg-slate-900/90 px-3.5 py-1.5 rounded-full border border-slate-700/80 cursor-pointer hover:border-yellow-500/50 transition shadow-inner group"
-                title="محفظة نقاط الولاء الخاصة بك"
-              >
-                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)] group-hover:scale-110 transition-transform" />
-                <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-yellow-50 font-mono">
-                    {user.points.toLocaleString('ar-SA')}
-                  </span>
-                  <span className="text-[10px] text-yellow-400/80 font-medium">نقطة</span>
-                </div>
               </div>
 
               {/* Action Icons */}

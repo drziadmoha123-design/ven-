@@ -1,6 +1,6 @@
 import React from 'react';
 import { CartItem, ViewType } from '../../types';
-import { formatMoney, formatPoints } from '../../lib/utils';
+import { formatMoney } from '../../lib/utils';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, ShieldCheck } from 'lucide-react';
 
 interface CartViewProps {
@@ -19,7 +19,6 @@ export const CartView: React.FC<CartViewProps> = ({
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const tax = Math.round(subtotal * 0.15);
   const total = subtotal; // price is already tax-inclusive in SA or subtotal
-  const pointsTotal = cart.reduce((acc, item) => acc + item.pointsPrice * item.quantity, 0);
 
   if (cart.length === 0) {
     return (
@@ -66,7 +65,6 @@ export const CartView: React.FC<CartViewProps> = ({
 
                 <div className="flex flex-wrap items-center gap-4 text-xs">
                   <div className="font-mono font-black text-white text-base">{formatMoney(item.price)}</div>
-                  <div className="text-yellow-400 font-mono font-medium">أو {formatPoints(item.pointsPrice)}</div>
                 </div>
               </div>
 
@@ -121,7 +119,6 @@ export const CartView: React.FC<CartViewProps> = ({
                 <span className="font-bold text-white text-base">المجموع الكلي:</span>
                 <div className="text-left">
                   <div className="text-2xl font-black text-purple-400 font-mono">{formatMoney(total)}</div>
-                  <div className="text-xs text-yellow-400 font-mono mt-0.5">أو {formatPoints(pointsTotal)}</div>
                 </div>
               </div>
             </div>

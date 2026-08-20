@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { productService } from "../../../server/services/product.service";
-import { handleApiError } from "../../../server/utils/api-handler";
-import { CatalogQuerySchema } from "../../../server/validators/catalog.schema";
+import { productService } from "../../../../server/services/product.service";
+import { handleApiError } from "../../../../server/utils/api-handler";
+import { CatalogQuerySchema } from "../../../../server/validators/catalog.schema";
 
 export async function GET(req: NextRequest) {
   try {

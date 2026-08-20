@@ -1,6 +1,6 @@
 import React from 'react';
 import { Product, ViewType } from '../../types';
-import { formatMoney, formatPoints } from '../../lib/utils';
+import { formatMoney } from '../../lib/utils';
 import { ArrowLeft, Star, ShoppingCart, Laptop, Smartphone, Headphones, Gamepad2, Sparkles, Heart } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -59,7 +59,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             transition={{ delay: 0.2 }}
             className="text-slate-300 mb-10 max-w-lg text-base md:text-lg leading-relaxed"
           >
-            تسوق أحدث الأجهزة الذكية الفاخرة. ادفع بالطريقة التي تناسبك نقدياً أو استخدم نقاطك المكتسبة للحصول على مشترياتك بالكامل.
+            تسوق أحدث الأجهزة الذكية الفاخرة والدفع عند الاستلام نقداً في جميع أنحاء الجمهورية.
           </motion.p>
 
           <motion.div
@@ -76,11 +76,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <ArrowLeft className="w-5 h-5" />
             </button>
             <button
-              onClick={() => onNavigate('account')}
+              onClick={() => onNavigate('products')}
               className="bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-white px-8 py-4 rounded-xl font-bold transition flex items-center gap-3 backdrop-blur"
             >
-              <span>اكتشف برنامج الولاء</span>
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <span>تصفح المنتجات</span>
             </button>
           </motion.div>
         </div>
@@ -205,10 +204,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     {p.oldPrice && (
                       <span className="text-xs text-slate-500 line-through mb-0.5">{formatMoney(p.oldPrice)}</span>
                     )}
-                  </div>
-                  <div className="text-[11px] text-yellow-400 mt-1 flex items-center gap-1 font-medium font-mono">
-                    <Star className="w-3 h-3 fill-yellow-400" />
-                    <span>{formatPoints(p.pointsPrice)}</span>
                   </div>
                 </div>
 

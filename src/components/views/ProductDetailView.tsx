@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { Product } from '../../types';
-import { formatMoney, formatPoints } from '../../lib/utils';
-import { ArrowRight, Star, ShoppingBag, ShieldCheck, Truck, RotateCcw, Plus, Minus, Check, Heart, Share2 } from 'lucide-react';
+import { formatMoney } from '../../lib/utils';
+import { ArrowRight, Star, ShoppingBag, ShieldCheck, Truck, RotateCcw, Plus, Minus, Heart, Share2 } from 'lucide-react';
 
 interface ProductDetailViewProps {
   product: Product;
   onBack: () => void;
   onAddToCart: (product: Product, quantity: number) => void;
   onBuyNow: (product: Product, quantity: number) => void;
-  userPoints: number;
 }
 
 export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
@@ -16,13 +15,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   onBack,
   onAddToCart,
   onBuyNow,
-  userPoints,
 }) => {
   const [quantity, setQuantity] = useState<number>(1);
   const [selectedImgIndex, setSelectedImgIndex] = useState<number>(0);
 
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : null;
-  const canAffordWithPoints = userPoints >= product.pointsPrice * quantity;
 
   // Demo gallery images
   const galleryImages = [
@@ -114,36 +111,15 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
             {/* Price Box */}
             <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="text-xs text-slate-400 mb-1">السعر النقدي (شامل الضريبة 15%)</div>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-black text-white font-mono">{formatMoney(product.price)}</span>
-                    {product.oldPrice && (
-                      <span className="text-sm text-slate-500 line-through font-mono">
-                        {formatMoney(product.oldPrice)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="sm:border-r sm:border-slate-800 sm:pr-6">
-                  <div className="text-xs text-yellow-400/80 mb-1 flex items-center gap-1 font-medium">
-                    <Star className="w-3 h-3 fill-yellow-400" />
-                    <span>أو بالاستبدال الفوري بالنقاط:</span>
-                  </div>
-                  <div className="text-xl font-black text-yellow-400 font-mono">
-                    {formatPoints(product.pointsPrice)}
-                  </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">
-                    {canAffordWithPoints ? (
-                      <span className="text-emerald-400 font-bold flex items-center gap-1">
-                        <Check className="w-3 h-3" /> رصيدك يكفي للشراء المباشر بالنقاط
-                      </span>
-                    ) : (
-                      <span>رصيدك الحالي: {userPoints.toLocaleString('ar-SA')} نقطة</span>
-                    )}
-                  </div>
+              <div>
+                <div className="text-xs text-slate-400 mb-1">السعر النقدي (الدفع عند الاستلام)</div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl font-black text-white font-mono">{formatMoney(product.price)}</span>
+                  {product.oldPrice && (
+                    <span className="text-sm text-slate-500 line-through font-mono">
+                      {formatMoney(product.oldPrice)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

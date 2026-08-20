@@ -1,15 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   UserRole,
-  PurchaseMode,
-  FundingMode,
   PaymentMethod,
   OrderStatus,
   ConfirmationStatus,
   ConfirmationMethod,
   ConfirmationAttemptResult,
   OrderAmendmentStatus,
-  PointsTransactionType,
   InventoryTransactionType,
   ReturnStatus,
   NotificationType,
@@ -36,17 +33,6 @@ describe("VEN+ Phase 01 Schema & Domain Specification Audit", () => {
       expect(Object.keys(UserRole)).toEqual(["CUSTOMER", "ADMIN"]);
     });
 
-    it("should enforce exact PurchaseMode values", () => {
-      expect(PurchaseMode.CASH).toBe("CASH");
-      expect(PurchaseMode.POINTS).toBe("POINTS");
-    });
-
-    it("should enforce exact FundingMode values", () => {
-      expect(FundingMode.CASH_ONLY).toBe("CASH_ONLY");
-      expect(FundingMode.POINTS_ONLY).toBe("POINTS_ONLY");
-      expect(FundingMode.MIXED).toBe("MIXED");
-    });
-
     it("should enforce single PaymentMethod as CASH_ON_DELIVERY in Phase 1", () => {
       expect(PaymentMethod.CASH_ON_DELIVERY).toBe("CASH_ON_DELIVERY");
       expect(Object.keys(PaymentMethod)).toEqual(["CASH_ON_DELIVERY"]);
@@ -65,18 +51,6 @@ describe("VEN+ Phase 01 Schema & Domain Specification Audit", () => {
       expect(statuses).toHaveLength(7);
       expect(statuses).toContain("PENDING_CONFIRMATION");
       expect(statuses).toContain("CUSTOMER_REFUSED");
-    });
-
-    it("should define append-only PointsTransaction types", () => {
-      const types = Object.values(PointsTransactionType);
-      expect(types).toContain("ORDER_DELIVERED");
-      expect(types).toContain("POINTS_PRODUCT_REDEMPTION");
-      expect(types).toContain("POINTS_PRODUCT_REFUND");
-      expect(types).toContain("FREE_SHIPPING_REDEMPTION");
-      expect(types).toContain("FREE_SHIPPING_REFUND");
-      expect(types).toContain("POINTS_REVERSAL");
-      expect(types).toContain("REFERRAL_REWARD");
-      expect(types).toContain("ADMIN_ADJUSTMENT");
     });
 
     it("should define append-only InventoryTransaction types", () => {
@@ -103,21 +77,8 @@ describe("VEN+ Phase 01 Schema & Domain Specification Audit", () => {
       expect(SYSTEM_SETTING_KEYS.GLOBAL_SHIPPING_PRICE).toBe("GLOBAL_SHIPPING_PRICE");
     });
 
-    it("should verify Free Shipping Points Threshold is 200 Points", () => {
-      expect(DOMAIN_DEFAULTS.FREE_SHIPPING_POINTS_THRESHOLD).toBe(200);
-      expect(SYSTEM_SETTING_KEYS.FREE_SHIPPING_POINTS_THRESHOLD).toBe("FREE_SHIPPING_POINTS_THRESHOLD");
-    });
-
     it("should verify Expected Delivery Duration is 2–3 Days", () => {
       expect(DOMAIN_DEFAULTS.EXPECTED_DELIVERY_DURATION).toBe("2–3 Days");
-    });
-
-    it("should verify Points Purchase Delivery Reward default is FALSE", () => {
-      expect(DOMAIN_DEFAULTS.AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION).toBe(false);
-    });
-
-    it("should verify Referral Reward is exactly 50 Points", () => {
-      expect(DOMAIN_DEFAULTS.REFERRAL_REWARD_POINTS).toBe(50);
     });
 
     it("should verify Low Stock Threshold is 5 units", () => {

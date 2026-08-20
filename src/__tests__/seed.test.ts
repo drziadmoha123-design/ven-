@@ -41,9 +41,9 @@ describe("Database Seed & Bootstrap Architecture", () => {
 
     // Run first time
     const firstRun = await bootstrapDatabase(mockPrisma);
-    expect(firstRun.settingsCreated).toBe(6);
+    expect(firstRun.settingsCreated).toBe(3);
     expect(firstRun.adminCreated).toBe(true);
-    expect(firstRun.categoriesCreated).toBe(4);
+    expect(firstRun.categoriesCreated).toBe(3);
 
     // Verify Admin created
     const createdAdmin = usersMap.get(firstRun.adminEmail);

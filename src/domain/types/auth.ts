@@ -12,7 +12,6 @@ export interface UserDTO {
   role: UserRole;
   referralCode: string;
   referredById: string | null;
-  pointsBalance: number;
   emailVerified: boolean;
   emailVerifiedAt: string | null;
   isActive: boolean;
@@ -57,7 +56,6 @@ export function toUserDTO(user: User): UserDTO {
     role: user.role,
     referralCode: user.referralCode,
     referredById: user.referredById,
-    pointsBalance: user.pointsBalance,
     emailVerified: user.emailVerifiedAt !== null && user.emailVerifiedAt !== undefined,
     emailVerifiedAt: user.emailVerifiedAt ? new Date(user.emailVerifiedAt).toISOString() : null,
     isActive: user.isActive,

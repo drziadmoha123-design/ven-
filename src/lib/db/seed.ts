@@ -22,24 +22,9 @@ export async function bootstrapDatabase(prisma: PrismaClient): Promise<Bootstrap
       description: "Standard global shipping price in EGP for Cash on Delivery orders",
     },
     {
-      key: SYSTEM_SETTING_KEYS.FREE_SHIPPING_POINTS_THRESHOLD,
-      value: String(DOMAIN_DEFAULTS.FREE_SHIPPING_POINTS_THRESHOLD),
-      description: "Minimum points balance required to redeem full free shipping",
-    },
-    {
       key: SYSTEM_SETTING_KEYS.EXPECTED_DELIVERY_DURATION,
       value: DOMAIN_DEFAULTS.EXPECTED_DELIVERY_DURATION,
       description: "Estimated delivery duration displayed to customers",
-    },
-    {
-      key: SYSTEM_SETTING_KEYS.AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION,
-      value: String(DOMAIN_DEFAULTS.AWARD_DELIVERY_POINTS_ON_POINTS_REDEMPTION),
-      description: "Whether products purchased with points earn delivery reward points upon delivery",
-    },
-    {
-      key: SYSTEM_SETTING_KEYS.REFERRAL_REWARD_POINTS,
-      value: String(DOMAIN_DEFAULTS.REFERRAL_REWARD_POINTS),
-      description: "Points awarded to referrer when referee completes their first delivered order",
     },
     {
       key: SYSTEM_SETTING_KEYS.LOW_STOCK_THRESHOLD,
@@ -96,7 +81,6 @@ export async function bootstrapDatabase(prisma: PrismaClient): Promise<Bootstrap
         phone: "01000000000",
         role: UserRole.ADMIN,
         referralCode: "VENADMIN",
-        pointsBalance: 0,
         emailVerifiedAt: new Date(),
         isActive: true,
       },
@@ -120,11 +104,6 @@ export async function bootstrapDatabase(prisma: PrismaClient): Promise<Bootstrap
       name: "Home & Living",
       nameAr: "مستلزمات المنزل",
       slug: "home-living",
-    },
-    {
-      name: "VEN+ Rewards Exclusives",
-      nameAr: "مكافآت حصرية",
-      slug: "rewards-exclusive",
     },
   ];
 

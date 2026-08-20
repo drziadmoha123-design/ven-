@@ -161,7 +161,6 @@ export class AuthService {
           role: UserRole.CUSTOMER, // Always CUSTOMER upon registration
           referralCode: newReferralCode,
           referredById: referrer ? referrer.id : null,
-          pointsBalance: 0,
           isActive: true,
         },
       });
@@ -446,7 +445,6 @@ export class AuthService {
           role: UserRole.CUSTOMER, // MUST ALWAYS BE CUSTOMER
           referralCode: newReferralCode,
           referredById: referrer ? referrer.id : null,
-          pointsBalance: 0,
           emailVerifiedAt: new Date(), // Google verified email
           isActive: true,
         },

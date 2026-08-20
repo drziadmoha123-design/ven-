@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { CartItem, User } from '../../types';
-import { formatMoney, formatPoints } from '../../lib/utils';
-import { CreditCard, Star, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { formatMoney } from '../../lib/utils';
+import { CreditCard, Banknote, ShieldCheck, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 interface CheckoutViewProps {
   cart: CartItem[];
   user: User;
   onPlaceOrder: (orderData: {
-    method: 'CASH' | 'POINTS';
+    method: 'CASH_ON_DELIVERY' | 'CARD';
     address: { name: string; phone: string; city: string; district: string; street: string };
     usedReferralCode?: string;
   }) => void;
@@ -18,7 +18,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
   user,
   onPlaceOrder,
 }) => {
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'POINTS'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH_ON_DELIVERY' | 'CARD'>('CASH_ON_DELIVERY');
   const [name, setName] = useState('أحمد محمد');
   const [phone, setPhone] = useState('0501234567');
   const [city, setCity] = useState('الرياض');
@@ -31,9 +31,6 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const pointsTotal = cart.reduce((acc, item) => acc + item.pointsPrice * item.quantity, 0);
-
-  const canAffordPoints = user.points >= pointsTotal;
 
   const handleApplyReferral = () => {
     if (!referralInput.trim()) return;
@@ -52,9 +49,6 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (paymentMethod === 'POINTS' && !canAffordPoints) {
-      return;
-    }
 
     setIsSubmitting(true);
     setTimeout(() => {
@@ -160,11 +154,39 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Option 1: Cash / Card */}
+              {/* Option 1: Cash on Delivery */}
               <div
-                onClick={() => setPaymentMethod('CASH')}
+                onClick={() => setPaymentMethod('CASH_ON_DELIVERY')}
                 className={`p-5 rounded-2xl border cursor-pointer transition relative ${
-                  paymentMethod === 'CASH'
+                  paymentMethod === 'CASH_ON_DELIVERY'
+                    ? 'border-purple-500 bg-purple-950/20 shadow-lg shadow-purple-900/20'
+                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <Banknote className="w-5 h-5 text-purple-400" />
+                    <span className="font-bold text-sm text-white">الدفع عند الاستلام (COD)</span>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                      paymentMethod === 'CASH_ON_DELIVERY' ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
+                    }`}
+                  >
+                    {paymentMethod === 'CASH_ON_DELIVERY' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mb-3">
+                  ادفع نقداً أو عبر بطاقة مدى عند استلام طلبك من مندوب التوصيل.
+                </p>
+                <div className="text-xs font-bold text-purple-300 font-mono">{formatMoney(subtotal)}</div>
+              </div>
+
+              {/* Option 2: Online Card */}
+              <div
+                onClick={() => setPaymentMethod('CARD')}
+                className={`p-5 rounded-2xl border cursor-pointer transition relative ${
+                  paymentMethod === 'CARD'
                     ? 'border-purple-500 bg-purple-950/20 shadow-lg shadow-purple-900/20'
                     : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
                 }`}
@@ -176,60 +198,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   </div>
                   <div
                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'CASH' ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
+                      paymentMethod === 'CARD' ? 'border-purple-500 bg-purple-500' : 'border-slate-600'
                     }`}
                   >
-                    {paymentMethod === 'CASH' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                    {paymentMethod === 'CARD' && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                  ادفع بواسطة مدى، فيزا، ماستركارد أو Apple Pay مع كاش باك 10% نقاط مجانية.
+                  ادفع مباشرة وأمان بواسطة مدى، فيزا، ماستركارد أو Apple Pay.
                 </p>
                 <div className="text-xs font-bold text-purple-300 font-mono">{formatMoney(subtotal)}</div>
-              </div>
-
-              {/* Option 2: Ven+ Points */}
-              <div
-                onClick={() => {
-                  if (canAffordPoints) setPaymentMethod('POINTS');
-                }}
-                className={`p-5 rounded-2xl border transition relative ${
-                  !canAffordPoints
-                    ? 'opacity-60 cursor-not-allowed border-slate-800 bg-slate-900/30'
-                    : paymentMethod === 'POINTS'
-                    ? 'border-yellow-500 bg-yellow-950/20 shadow-lg shadow-yellow-900/20 cursor-pointer'
-                    : 'border-slate-800 bg-slate-900/60 hover:border-slate-700 cursor-pointer'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                    <span className="font-bold text-sm text-white">استبدال نقاط الولاء</span>
-                  </div>
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      paymentMethod === 'POINTS' ? 'border-yellow-500 bg-yellow-500' : 'border-slate-600'
-                    }`}
-                  >
-                    {paymentMethod === 'POINTS' && <div className="w-1.5 h-1.5 bg-slate-950 rounded-full"></div>}
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed mb-3">
-                  ادفع كلياً باستخدام رصيد نقاطك المحفوظة دون دفع أي مبلغ نقدي إضافي.
-                </p>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-yellow-400 font-mono">{formatPoints(pointsTotal)}</span>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    (رصيدك: {user.points.toLocaleString('ar-SA')})
-                  </span>
-                </div>
-
-                {!canAffordPoints && (
-                  <div className="mt-3 text-[10px] text-rose-400 bg-rose-950/30 border border-rose-900/50 p-1.5 rounded-lg flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3 shrink-0" />
-                    <span>رصيد نقاطك غير كافٍ لهذا الطلب</span>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -258,7 +236,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
             {referralApplied && (
               <div className="mt-2 text-xs text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>تم قبول كود الإحالة بنجاح! ستحصل على 500 نقطة إضافية عند تأكيد الطلب.</span>
+                <span>تم قبول كود الإحالة بنجاح!</span>
               </div>
             )}
             {referralError && (
@@ -306,18 +284,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
               <div className="border-t border-slate-800 pt-3 flex justify-between items-baseline">
                 <span className="font-bold text-white">المبلغ المطلوب للدفع:</span>
                 <div className="text-left">
-                  {paymentMethod === 'CASH' ? (
-                    <span className="text-2xl font-black text-purple-400 font-mono">{formatMoney(subtotal)}</span>
-                  ) : (
-                    <span className="text-xl font-black text-yellow-400 font-mono">{formatPoints(pointsTotal)}</span>
-                  )}
+                  <span className="text-2xl font-black text-purple-400 font-mono">{formatMoney(subtotal)}</span>
                 </div>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting || (paymentMethod === 'POINTS' && !canAffordPoints)}
+              disabled={isSubmitting}
               className="w-full btn-primary py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-base shadow-xl disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -326,7 +300,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   <span>جاري معالجة وتأكيد الطلب...</span>
                 </>
               ) : (
-                <span>تأكيد الطلب والدفع الفوري</span>
+                <span>تأكيد الطلب والدفع</span>
               )}
             </button>
 

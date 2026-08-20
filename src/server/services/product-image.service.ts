@@ -1,15 +1,17 @@
-import { prisma } from "../../lib/prisma";
+import { prisma as defaultPrisma } from "../../lib/prisma";
 import { NotFoundError, ValidationError } from "../../domain/errors";
 import { ProductImageDTO, toProductImageDTO } from "../../domain/types/catalog";
 import { CreateProductImageInput } from "../validators/catalog.schema";
 import { AuditAction, UserRole } from "@prisma/client";
 
 export class ProductImageService {
+  constructor(private prisma: any = defaultPrisma) {}
+
   /**
    * Retrieves all images for a product
    */
   async getProductImages(productId: string): Promise<ProductImageDTO[]> {
-    const images = await prisma.productImage.findMany({
+    const images = await this.prisma.productImage.findMany({
       where: { productId },
       orderBy: { displayOrder: "asc" },
     });
@@ -26,7 +28,7 @@ export class ProductImageService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<ProductImageDTO> {
-    const product = await prisma.product.findUnique({
+    const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: { images: true },
     });
@@ -38,9 +40,8 @@ export class ProductImageService {
     const isFirstImage = product.images.length === 0;
     const shouldBePrimary = input.isPrimary || isFirstImage;
 
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await this.prisma.$transaction(async (tx: any) => {
       if (shouldBePrimary) {
-        // Demote previous primary images
         await tx.productImage.updateMany({
           where: { productId, isPrimary: true },
           data: { isPrimary: false },
@@ -58,18 +59,20 @@ export class ProductImageService {
         },
       });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.CREATE,
-          entity: "ProductImage",
-          entityId: img.id,
-          summary: `Added image to product '${product.title}'`,
-          details: { imageId: img.id, productId, url: img.url, isPrimary: shouldBePrimary },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.CREATE,
+            entity: "ProductImage",
+            entityId: img.id,
+            newData: img,
+            ipAddress: ipAddress || null,
+            summary: `Added image to product ${productId}`,
+          },
+        });
+      }
 
       return img;
     });
@@ -78,7 +81,7 @@ export class ProductImageService {
   }
 
   /**
-   * Sets primary image for a product
+   * Sets an image as the primary image for a product
    */
   async setPrimaryImage(
     productId: string,
@@ -87,15 +90,15 @@ export class ProductImageService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<void> {
-    const image = await prisma.productImage.findFirst({
+    const image = await this.prisma.productImage.findFirst({
       where: { id: imageId, productId },
     });
 
     if (!image) {
-      throw new NotFoundError(`Image with ID '${imageId}' not found for product '${productId}'.`);
+      throw new NotFoundError("Product image not found");
     }
 
-    await prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx: any) => {
       await tx.productImage.updateMany({
         where: { productId, isPrimary: true },
         data: { isPrimary: false },
@@ -106,23 +109,24 @@ export class ProductImageService {
         data: { isPrimary: true },
       });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.UPDATE,
-          entity: "ProductImage",
-          entityId: imageId,
-          summary: `Set image '${imageId}' as primary for product '${productId}'`,
-          details: { productId, imageId },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.UPDATE,
+            entity: "ProductImage",
+            entityId: imageId,
+            ipAddress: ipAddress || null,
+            summary: `Set image ${imageId} as primary for product ${productId}`,
+          },
+        });
+      }
     });
   }
 
   /**
-   * Deletes an image from a product
+   * Deletes an image and reassigns primary if needed
    */
   async deleteImage(
     productId: string,
@@ -131,21 +135,19 @@ export class ProductImageService {
     actorRole?: UserRole,
     ipAddress?: string
   ): Promise<void> {
-    const image = await prisma.productImage.findFirst({
+    const image = await this.prisma.productImage.findFirst({
       where: { id: imageId, productId },
     });
 
     if (!image) {
-      throw new NotFoundError(`Image with ID '${imageId}' not found for product '${productId}'.`);
+      throw new NotFoundError("Product image not found");
     }
 
-    await prisma.$transaction(async (tx) => {
-      await tx.productImage.delete({
-        where: { id: imageId },
-      });
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.productImage.delete({ where: { id: imageId } });
 
-      // If deleted image was primary, make the next available image primary
       if (image.isPrimary) {
+        // Fallback: make next lowest displayOrder image primary
         const nextImage = await tx.productImage.findFirst({
           where: { productId },
           orderBy: { displayOrder: "asc" },
@@ -159,18 +161,20 @@ export class ProductImageService {
         }
       }
 
-      await tx.auditLog.create({
-        data: {
-          actorId: actorId || null,
-          actorRole: actorRole || null,
-          action: AuditAction.DELETE,
-          entity: "ProductImage",
-          entityId: imageId,
-          summary: `Deleted image '${imageId}' from product '${productId}'`,
-          details: { deletedImage: image },
-          ipAddress: ipAddress || null,
-        },
-      });
+      if (actorId && actorRole) {
+        await tx.auditLog.create({
+          data: {
+            userId: actorId,
+            userRole: actorRole,
+            action: AuditAction.DELETE,
+            entity: "ProductImage",
+            entityId: imageId,
+            oldData: image,
+            ipAddress: ipAddress || null,
+            summary: `Deleted image ${imageId} from product ${productId}`,
+          },
+        });
+      }
     });
   }
 }

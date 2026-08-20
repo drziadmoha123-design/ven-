@@ -5,7 +5,6 @@ import {
   TrendingUp,
   ShoppingBag,
   Users,
-  Star,
   Package,
   Plus,
   ArrowRight,
@@ -13,6 +12,7 @@ import {
   Clock,
   Truck,
   Layers,
+  CreditCard,
 } from 'lucide-react';
 
 interface AdminViewProps {
@@ -48,7 +48,6 @@ export const AdminView: React.FC<AdminViewProps> = ({
     onAddProduct({
       name: newProdName,
       price: newProdPrice,
-      pointsPrice: newProdPrice * 10,
       category: newProdCategory,
       rating: 5.0,
       reviews: 1,
@@ -82,7 +81,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <h1 className="text-2xl font-black text-white">لوحة تحكم الإدارة (Ven+ Admin)</h1>
           </div>
-          <p className="text-xs text-slate-400">إدارة العمليات، المبيعات المباشرة، وحركات نقاط الولاء</p>
+          <p className="text-xs text-slate-400">إدارة العمليات، المبيعات المباشرة، وحالات الطلبات</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -154,17 +153,17 @@ export const AdminView: React.FC<AdminViewProps> = ({
         <div className="glass-card p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="text-xs text-slate-400 mb-1">نقاط الولاء المصروفة</p>
-              <h3 className="text-2xl font-black text-yellow-400 font-mono">
-                {((stats.pointsSpent || 0) / 1000).toFixed(1)}k
+              <p className="text-xs text-slate-400 mb-1">المنتجات المتوفرة</p>
+              <h3 className="text-2xl font-black text-purple-400 font-mono">
+                {products.length}
               </h3>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-yellow-500/10 text-yellow-400 flex items-center justify-center">
-              <Star className="w-5 h-5 fill-yellow-400" />
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+              <Package className="w-5 h-5" />
             </div>
           </div>
-          <div className="text-[11px] text-yellow-500/90 font-mono">
-            من أصل {((stats.pointsIssued || 0) / 1000).toFixed(0)}k نقطة تم إصدارها
+          <div className="text-[11px] text-purple-400 font-mono">
+            جميعها مؤهلة للشحن الفوري
           </div>
         </div>
       </div>
@@ -267,13 +266,7 @@ export const AdminView: React.FC<AdminViewProps> = ({
                     <td className="py-4 px-4 text-slate-300">{order.itemsCount} عناصر</td>
                     <td className="py-4 px-4 font-mono font-bold text-purple-300">{order.total}</td>
                     <td className="py-4 px-4">
-                      {order.method === 'POINTS' ? (
-                        <span className="text-yellow-400 flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-yellow-400" /> نقاط
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">كاش / بطاقة</span>
-                      )}
+                      <span className="text-slate-300">كاش / بطاقة</span>
                     </td>
                     <td className="py-4 px-4">
                       <span className={`px-2.5 py-1 rounded-full border font-bold ${statusColors[order.status]}`}>

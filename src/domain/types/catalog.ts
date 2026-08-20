@@ -38,8 +38,6 @@ export interface ProductVariantDTO {
   size: string | null;
   customAttributes: Record<string, unknown> | null;
   cashPrice: number;
-  pointsPrice: number | null;
-  deliveryRewardPoints: number;
   stock: number;
   isActive: boolean;
   createdAt: string;
@@ -56,9 +54,6 @@ export interface ProductDTO {
   categoryId: string;
   category?: CategoryDTO;
   baseCashPrice: number;
-  pointsEnabled: boolean;
-  pointsPrice: number | null;
-  deliveryRewardPoints: number;
   specifications: Record<string, unknown> | null;
   isActive: boolean;
   images: ProductImageDTO[];
@@ -77,9 +72,8 @@ export interface CatalogQueryFilters {
   categorySlug?: string;
   minPrice?: number;
   maxPrice?: number;
-  pointsOnly?: boolean;
   inStockOnly?: boolean;
-  sortBy?: "newest" | "price-asc" | "price-desc" | "rating" | "points-asc" | "points-desc";
+  sortBy?: "newest" | "price-asc" | "price-desc" | "rating";
   page?: number;
   limit?: number;
   locale?: Locale;
@@ -141,8 +135,6 @@ export function toProductVariantDTO(variant: ProductVariant): ProductVariantDTO 
     size: variant.size,
     customAttributes: variant.customAttributes as Record<string, unknown> | null,
     cashPrice: Number(variant.cashPrice),
-    pointsPrice: variant.pointsPrice,
-    deliveryRewardPoints: variant.deliveryRewardPoints,
     stock: variant.stock,
     isActive: variant.isActive,
     createdAt: variant.createdAt.toISOString(),
@@ -180,9 +172,6 @@ export function toProductDTO(
     categoryId: product.categoryId,
     category: product.category ? toCategoryDTO(product.category) : undefined,
     baseCashPrice: Number(product.baseCashPrice),
-    pointsEnabled: product.pointsEnabled,
-    pointsPrice: product.pointsPrice,
-    deliveryRewardPoints: product.deliveryRewardPoints,
     specifications: product.specifications as Record<string, unknown> | null,
     isActive: product.isActive,
     images,
@@ -193,5 +182,40 @@ export function toProductDTO(
     totalStock,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),
+  };
+}
+
+export function toProductDetailDTO(
+  product: Product & {
+    category?: Category;
+    images?: ProductImage[];
+    variants?: ProductVariant[];
+  }
+): ProductDetailDTO {
+  const base = toProductDTO(product);
+  const availableColors = Array.from(
+    new Set(base.variants.map((v) => v.color).filter((c): c is string => Boolean(c)))
+  );
+  const availableSizes = Array.from(
+    new Set(base.variants.map((v) => v.size).filter((s): s is string => Boolean(s)))
+  );
+  const attributesMatrix: Record<string, string[]> = {};
+  for (const v of base.variants) {
+    if (v.customAttributes) {
+      for (const [key, val] of Object.entries(v.customAttributes)) {
+        if (!attributesMatrix[key]) attributesMatrix[key] = [];
+        const strVal = String(val);
+        if (!attributesMatrix[key].includes(strVal)) {
+          attributesMatrix[key].push(strVal);
+        }
+      }
+    }
+  }
+
+  return {
+    ...base,
+    availableColors,
+    availableSizes,
+    attributesMatrix,
   };
 }
